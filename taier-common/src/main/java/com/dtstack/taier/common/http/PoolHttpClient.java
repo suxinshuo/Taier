@@ -224,7 +224,7 @@ public class PoolHttpClient {
             if (status == HttpStatus.SC_OK) {
                 responseBody = result;
             } else if (status == HttpStatus.SC_UNAUTHORIZED){
-                throw new DtCenterDefException("登陆状态失效");
+                throw new DtCenterDefException("登录状态失效");
             } else {
                 logger.error("request url:{} fail:{}", httpPost.getURI().toString(), result);
                 return null;
@@ -290,7 +290,7 @@ public class PoolHttpClient {
                 if (statusCode == HttpStatus.SC_OK) {
                     respBody = result;
                 } else if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new DtCenterDefException("登陆状态失效");
+                    throw new DtCenterDefException("登录状态失效");
                 } else {
                     logger.error("request url:{} fail:{}", url, result);
                 }

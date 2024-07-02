@@ -24,7 +24,7 @@ sidebar_label: 快速上手
 
 ## 选择租户
 
-登陆成功之后，需要选择对应的租户，页面数据跟随选中的租户切换
+登录成功之后，需要选择对应的租户，页面数据跟随选中的租户切换
 
 ![switch-tenant](/img/readme/switch-tenant.png)
 

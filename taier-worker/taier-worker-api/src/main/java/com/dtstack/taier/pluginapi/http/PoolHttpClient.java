@@ -244,7 +244,7 @@ public class PoolHttpClient {
 				HttpEntity entity = response.getEntity();
 				respBody = EntityUtils.toString(entity,charset);
 			}else if (statusCode == HttpStatus.SC_UNAUTHORIZED){
-				throw new PluginDefineException("登陆状态失效" + statusCode);
+				throw new PluginDefineException("登录状态失效" + statusCode);
 			}else{
 				LOGGER.warn("request url:{} fail:{}",url,response.getStatusLine().getStatusCode());
 

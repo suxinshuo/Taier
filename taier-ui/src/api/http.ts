@@ -81,7 +81,7 @@ class Http {
                 if (res.code !== 1 && res.message === '未登录') {
                     notification.error({
                         key: 'NotLogin',
-                        message: `未登录，请登陆后进行操作`,
+                        message: `未登录，请登录后进行操作`,
                     });
                 }
                 return res;
