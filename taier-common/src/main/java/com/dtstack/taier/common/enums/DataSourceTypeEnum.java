@@ -60,6 +60,7 @@ public enum DataSourceTypeEnum {
     HIVE2X(7, "Hive", "2.x"),
     HIVE3X(50, "Hive", "3.x"),
     SparkThrift2_1(45, "SparkThrift", null),
+    KYUUBI(1004, "Kyuubi", null),
     MAXCOMPUTE(10, "Maxcompute", null),
     GREENPLUM6(36, "Greenplum", null),
     LIBRA(21, "GaussDB", null),

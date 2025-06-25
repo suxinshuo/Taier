@@ -361,6 +361,11 @@ public interface Consistent {
 
     String SCHEMA = "schema";
 
+    /**
+     * 默认存储查询结果的路径
+     */
+    String DEFAULT_RESULT_PATH = "defaultResultPath";
+
     interface SSLConfig {
         /**
          * TLS 验证的方法。共有三种模式：（FULL 默认）CA和NONE

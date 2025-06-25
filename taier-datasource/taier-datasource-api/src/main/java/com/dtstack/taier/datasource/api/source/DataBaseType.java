@@ -38,6 +38,7 @@ public enum DataBaseType {
     HIVE3("hive3", "org.apache.hive.jdbc.HiveDriver"),
     CarbonData("carbonData", "org.apache.hive.jdbc.HiveDriver"),
     Spark("hive", "org.apache.hive.jdbc.HiveDriver"),
+    KYUUBI("kyuubi", "org.apache.kyuubi.jdbc.KyuubiHiveDriver"),
     INCEPTOR("inceptor", "org.apache.hive.jdbc.HiveDriver"),
     ADS("mysql", "com.mysql.jdbc.Driver"),
     ADB_FOR_PG("postgresql", "org.postgresql.Driver"),

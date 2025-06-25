@@ -399,7 +399,7 @@ export function SelectWithPreviewer(props: SelectProps & IOptionsFromRequest) {
 
     const isIncrement = useMemo(() => syncModel === DATA_SYNC_MODE.INCREMENT, [syncModel]);
     const isSupportSubLibrary = useMemo(
-        () => [DATA_SOURCE_ENUM.MYSQL, DATA_SOURCE_ENUM.SQLSERVER].includes(type),
+        () => [DATA_SOURCE_ENUM.MYSQL, DATA_SOURCE_ENUM.SQLSERVER, DATA_SOURCE_ENUM.Kyuubi].includes(type),
         [type]
     );
 

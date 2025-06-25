@@ -26,6 +26,7 @@ import {
     ShellIcon,
     SparkIcon,
     SparkSQLIcon,
+    KyuubiSQLIcon,
     SqlServerIcon,
     TiDbIcon,
     VerticaIcon,
@@ -224,6 +225,8 @@ export default class TaskRenderService extends Component<ITaskRenderState> {
         switch (key) {
             case TASK_TYPE_ENUM.SPARK_SQL:
                 return <SparkSQLIcon style={{ color: '#519aba' }} />;
+            case TASK_TYPE_ENUM.KYUUBI_SQL:
+                return <KyuubiSQLIcon style={{ color: '#4291f0' }} />;
             case TASK_TYPE_ENUM.SYNC:
                 return 'sync';
             case TASK_TYPE_ENUM.HIVE_SQL:

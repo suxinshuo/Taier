@@ -58,6 +58,10 @@ public enum DataSourceType {
     HIVE(7, 20, "Hive2.x", "Hive2.x", "hive"),
     HIVE1X(27, 21, "Hive1.x", "Hive1.x", "hive1"),
     HIVE3X(50, 22, "Hive3.x", "Hive3.x", "hive3"),
+
+    // Kyuubi
+    KYUUBI(1004, 24, "Kyuubi", "Kyuubi", "kyuubi"),
+
     MAXCOMPUTE(10, 23, "MaxCompute", "MaxCompute", "maxcompute"),
 
     // MPP
@@ -168,6 +172,7 @@ public enum DataSourceType {
         RDBM_S.add(HIVE3_CDP.val);
         RDBM_S.add(Spark.val);
         RDBM_S.add(SparkThrift2_1.val);
+        RDBM_S.add(KYUUBI.val);
         RDBM_S.add(Presto.val);
         RDBM_S.add(Kylin.val);
         RDBM_S.add(VERTICA.val);

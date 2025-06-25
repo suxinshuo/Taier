@@ -107,6 +107,16 @@ export const FlinkSQLIcon = ({ style }: IConProps) => {
         </span>
     );
 };
+export const KyuubiSQLIcon = ({ style }: IConProps) => (
+    <span title="KyuubiSQL" style={{ fontSize: 0, ...style }}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" className="icon" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 17l10 5 10-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 12l10 5 10-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    </span>
+);
+
 export const DataCollectionIcon = ({ style }: IConProps) => {
     return (
         <span title="实时采集" style={{ fontSize: 0, ...style }}>

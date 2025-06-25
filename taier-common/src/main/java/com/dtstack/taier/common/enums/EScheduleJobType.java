@@ -119,6 +119,11 @@ public enum EScheduleJobType {
     DATAX(26,"DataX", EJobType.PYTHON.getType(),14, EComponentType.DATAX, EComputeType.BATCH, EJobClientType.WORKER_PLUGIN),
 
     ORACLE_SQL(27, "OracleSQL", EJobType.SQL.getType(), 4, null, EComputeType.BATCH, EJobClientType.DATASOURCE_PLUGIN),
+
+    /**
+     * Kyuubi Spark SQL
+     */
+    KYUUBI_SPARK_SQL(28, "KyuubiSparkSQL", EJobType.SQL.getType(), 4, null, EComputeType.BATCH, EJobClientType.DATASOURCE_PLUGIN),
     ;
 
     private final Integer type;

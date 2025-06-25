@@ -71,6 +71,7 @@
         <module>taier-datasource-plugin-tdengine</module>
         <module>taier-datasource-plugin-restful-core</module>
         <module>taier-datasource-plugin-oracle</module>
+        <module>taier-datasource-plugin-kyuubi</module>
     </modules>
     
     <properties>

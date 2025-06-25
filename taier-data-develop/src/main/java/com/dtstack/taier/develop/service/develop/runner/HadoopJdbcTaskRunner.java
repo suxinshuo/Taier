@@ -27,6 +27,7 @@ import com.dtstack.taier.common.enums.EComponentType;
 import com.dtstack.taier.common.enums.EScheduleJobType;
 import com.dtstack.taier.common.enums.ETableType;
 import com.dtstack.taier.common.enums.TempJobType;
+import com.dtstack.taier.common.util.JsonUtils;
 import com.dtstack.taier.common.util.SqlFormatUtil;
 import com.dtstack.taier.dao.domain.DevelopDataSource;
 import com.dtstack.taier.dao.domain.DevelopSelectSql;
@@ -35,6 +36,7 @@ import com.dtstack.taier.dao.domain.ScheduleJobExpand;
 import com.dtstack.taier.dao.domain.Task;
 import com.dtstack.taier.datasource.api.dto.source.ISourceDTO;
 import com.dtstack.taier.develop.bo.ExecuteContent;
+import com.dtstack.taier.develop.datasource.convert.Consistent;
 import com.dtstack.taier.develop.dto.devlop.BuildSqlVO;
 import com.dtstack.taier.develop.dto.devlop.ExecuteResultVO;
 import com.dtstack.taier.develop.service.develop.impl.DevelopFunctionService;
@@ -93,6 +95,7 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
     private static final String CREATE_FUNCTION_TEMP_TABLE = "%s create table %s stored as orc as select * from (%s)temp";
 
     private static final String CREATE_TEMP_TABLE = "create table %s stored as orc as select * from (%s)temp";
+    private static final String KYUUBI_SAVE_RESULT_TEMPLATE = "INSERT OVERWRITE DIRECTORY '%s' USING JSON %s";
 
     @Override
     public abstract List<EScheduleJobType> support();
@@ -129,6 +132,11 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
 
 
     protected boolean divertTask(ExecuteContent executeContent) {
+        // kyuubi 都走异步
+        if (Objects.equals(EScheduleJobType.KYUUBI_SPARK_SQL.getType(), executeContent.getTaskType())) {
+            return false;
+        }
+
         ParseResult parseResult = executeContent.getParseResult();
         Long tenantId = executeContent.getTenantId();
         // 校验是否含有自定义函数
@@ -340,7 +348,12 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
         String sql;
         if (SqlType.QUERY.equals(parseResult.getSqlType())) {
             isSelectSql = TempJobType.SELECT.getType();
-            sql = buildSelectSqlCustomFunction(originSql, task.getTenantId(), tempTable, task.getTaskType());
+            // kyuubi spark sql 执行结果保存在 hdfs
+            if (Objects.equals(task.getTaskType(), EScheduleJobType.KYUUBI_SPARK_SQL.getType())) {
+                sql = buildKyuubiSelectSqlWithResult(originSql, tempTable, task);
+            } else {
+                sql = buildSelectSqlCustomFunction(originSql, task.getTenantId(), tempTable, task.getTaskType());
+            }
         } else {
             isSelectSql = TempJobType.OTHER.getType();
             sql = buildCustomFunctionAndDbSql(originSql, task.getTenantId(), true, task.getTaskType());
@@ -395,6 +408,25 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
             return String.format(CREATE_FUNCTION_TEMP_TABLE, createFunction, tempTable, originSql);
         }
         return String.format(CREATE_TEMP_TABLE, tempTable, originSql);
+    }
+
+    private String buildKyuubiSelectSqlWithResult(String originSql, String tempTable, Task task) {
+        if (StringUtils.isBlank(originSql)) {
+            return originSql;
+        }
+
+        // 查询 datasource 中设置的保存结果 hdfs 路径
+        String kyuubiResultPath = getKyuubiResultPath(task.getDatasourceId(), tempTable);
+        // 改变最后的查询语句, 从 select ... 变成 insert overwrite ... select ...
+        return String.format(KYUUBI_SAVE_RESULT_TEMPLATE, kyuubiResultPath, originSql);
+    }
+
+    protected String getKyuubiResultPath(Long datasourceId, String tempTable) {
+        DevelopDataSource dataSource = datasourceService.getOne(datasourceId);
+        JSONObject json = JSON.parseObject(dataSource.getDataJson());
+        String fsDefaultFs = JsonUtils.getStrFromJson(json, Consistent.DEFAULT_FS);
+        String defaultResultPath = JsonUtils.getStrFromJson(json, Consistent.DEFAULT_RESULT_PATH);
+        return fsDefaultFs + defaultResultPath + tempTable;
     }
 
     @Override

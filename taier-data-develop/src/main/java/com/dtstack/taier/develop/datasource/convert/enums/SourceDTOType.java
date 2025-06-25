@@ -21,65 +21,7 @@ package com.dtstack.taier.develop.datasource.convert.enums;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.dtstack.taier.common.exception.DtCenterDefException;
-import com.dtstack.taier.datasource.api.dto.source.AbstractSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.AdbForPgSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.AwsS3SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.ClickHouseSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.CspS3SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Db2SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.DmSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.DorisRestfulSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.DorisSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.EMQSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.ES7SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.ESSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.FtpSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.GBaseSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.GreatDbSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Greenplum6SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.HbaseSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Hdfs3SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.HdfsSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Hive1SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Hive3SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.HiveSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.ISourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.IcebergSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.ImpalaSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.InceptorSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.InfluxDBSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.KafkaSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.KingbaseSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.KuduSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.KylinRestfulSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.KylinSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.LibraSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.MongoSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Mysql5SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Mysql8SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.OceanBaseSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.OdpsSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.OpenTSDBSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.OracleSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.Phoenix5SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.PhoenixSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.PostgresqlSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.PrestoSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.RdbmsSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.RedisSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.RestfulSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.S3SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SapHana1SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SapHana2SourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SocketSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SolrSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SparkSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.SqlserverSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.TDengineSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.TiDBSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.TrinoSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.VerticaSourceDTO;
-import com.dtstack.taier.datasource.api.dto.source.WebSocketSourceDTO;
+import com.dtstack.taier.datasource.api.dto.source.*;
 import com.dtstack.taier.datasource.api.enums.RedisMode;
 import com.dtstack.taier.datasource.api.source.DataSourceType;
 import com.dtstack.taier.develop.datasource.convert.Consistent;
@@ -338,6 +280,18 @@ public enum SourceDTOType {
             fillRdbmsSourceDTO(sourceDTO, dataJson, configDTO);
             sourceDTO.setDefaultFS(getDefaultFS(dataJson));
             sourceDTO.setConfig(dataJson.getString(Consistent.HADOOP_CONFIG));
+            return sourceDTO;
+        }
+    },
+
+    /**
+     * kyuubi
+     */
+    KYUUBI(DataSourceType.KYUUBI.getVal()) {
+        @Override
+        public ISourceDTO getSourceDTO(JSONObject dataJson, ConfigDTO configDTO) {
+            KyuubiSourceDTO sourceDTO = KyuubiSourceDTO.builder().build();
+            fillRdbmsSourceDTO(sourceDTO, dataJson, configDTO);
             return sourceDTO;
         }
     },

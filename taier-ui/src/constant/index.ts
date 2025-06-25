@@ -271,6 +271,7 @@ export enum TASK_TYPE_ENUM {
     HADOOP_MR = 25,
     DATAX,
     ORACLE_SQL = 27,
+    KYUUBI_SQL = 28,
 }
 
 /**
@@ -280,6 +281,7 @@ export enum DATA_SOURCE_ENUM {
     MYSQL = 1,
     MySQL8 = 1001,
     MySQLPXC = 98,
+    Kyuubi = 1004,
     POLAR_DB_For_MySQL = 28,
     ORACLE = 2,
     SQLSERVER = 3,

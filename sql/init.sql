@@ -858,6 +858,12 @@ INSERT INTO `datasource_form_field` VALUES (389, 'jdbcUrl', 'JDBC URL', 'Input',
 INSERT INTO `datasource_form_field` VALUES (391, 'username', '用户名', 'Input', 0, 0, NULL, NULL, NULL, 1, '', NULL, NULL, NULL, 'OceanBase', 0, '2021-08-05 09:35:57', '2021-08-05 10:08:08', 0, 0, '');
 INSERT INTO `datasource_form_field` VALUES (393, 'password', '密码', 'Password', 0, 0, NULL, NULL, NULL, 0, '', NULL, NULL, NULL, 'OceanBase', 0, '2021-08-05 09:35:57', '2021-08-05 10:08:12', 0, 0, '');
 INSERT INTO `datasource_form_field` VALUES (395, 'schema', 'schema', 'Input', 1, 0, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, 'Doris-0.14.x', 0, '2022-10-24 15:46:53', '2022-10-24 15:46:53', 0, 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (397, 'jdbcUrl', 'JDBC URL', 'Input', 1, 0, '', 'jdbc:kyuubi://host:port/schema', null, 0, '{"regex":{"message":"JDBC URL格式不符合规则!"}}', null, null, '/jdbc:kyuubi:\/\/(.)+/', 'Kyuubi', 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (398, 'username', '用户名', 'Input', 0, 0, '', null, null, 0, null, null, null, null, 'Kyuubi', 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (399, 'password', '密码', 'Password', 0, 0, '', null, null, 0, null, null, null, null, 'Kyuubi', 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (400, 'defaultFS', 'defaultFS', 'Input', 1, 0, '', 'hdfs://host:port', null, 1, null, '注意结尾不带/', null, null, 'Kyuubi', 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (401, 'hadoopConfig', '高可用配置', 'TextAreaWithCopy',0,0, null, '{"dfs.nameservices":"defaultDfs","dfs.ha.namenodes.defaultDfs":"namenode1","dfs.namenode.rpc-address.defaultDfs.namenode1":"","dfs.client.failover.proxy.provider.defaultDfs":"org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"}', null, 0, '', '', null, null, 'Kyuubi', 0, '');
+INSERT INTO `datasource_form_field` (id, name, label, widget, required, invisible, default_value, place_hold, request_api, is_link, valid_info, tooltip, style, regex, type_version, is_deleted, options) values (402, 'defaultResultPath', '查询结果保存路径', 'Input', 1, 0, null, '/taier/select_res/', null, 0, null, '注意开头结束都是/', null, null, 'Kyuubi', 0, '');
 COMMIT;
 
 -- ----------------------------
@@ -875,7 +881,7 @@ CREATE TABLE `datasource_info` (
   `status` tinyint(4) NOT NULL COMMENT '连接状态 0-连接失败, 1-正常',
   `is_meta` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否有meta标志 0-否 1-是',
   `tenant_id` int(11) NOT NULL COMMENT '租户主键id **可能不是id 其他唯一凭证',
-  `data_type_code` tinyint(4) NOT NULL DEFAULT '0' COMMENT '数据源类型编码',
+  `data_type_code` int(11) NOT NULL DEFAULT '0' COMMENT '数据源类型编码',
   `schema_name` varchar(64) COLLATE utf8_bin DEFAULT '' COMMENT '数据源schemaName',
   `is_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否删除,1删除，0未删除',
   `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -956,6 +962,7 @@ INSERT INTO `datasource_type` VALUES (83, 'Doris', 7, 0.0, 'Doris.png', 1200, 0,
 INSERT INTO `datasource_type` VALUES (85, 'Kylin JDBC', 7, 0.0, 'Kylin.png', 1300, 0, 0, '2021-07-06 12:22:10', '2021-07-06 15:49:09', 0, 0);
 INSERT INTO `datasource_type` VALUES (87, 'SQLServer JDBC', 3, 0.0, 'SQLServer.png', 1200, 0, 0, '2021-07-06 12:22:10', '2021-07-06 15:49:09', 0, 0);
 INSERT INTO `datasource_type` VALUES (89, 'OceanBase', 5, 1.0, 'OceanBase.png', 1200, 0, 0, '2021-08-05 10:22:10', '2021-08-17 11:53:29', 0, 0);
+INSERT INTO `datasource_type` (id, data_type, data_classify_id, weight, img_url, sorted, invisible, is_deleted) values (91, 'Kyuubi', 4, 0.0, 'Kyuubi.png', 2100, 0, 0);
 COMMIT;
 
 -- ----------------------------
@@ -1835,7 +1842,7 @@ VALUES ('component_datasource_mapping', '3', '80', null, 18, 1, 'STRING', 'TDH 6
 INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default,
                   gmt_create, gmt_modified, is_deleted)
 VALUES ('spark_version', '3.2', '320', null, 2, 1, 'INTEGER', '', 1, now(),now(), 0);
-
+INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default, is_deleted) values ('28', 'Kyuubi', '{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_params","env_params"],"formField":["datasource"],"renderKind":"editor","dataTypeCodes":[1004]}', null, 30, 0, 'STRING', '', 0, 0);
 COMMIT;
 
 -- ----------------------------
