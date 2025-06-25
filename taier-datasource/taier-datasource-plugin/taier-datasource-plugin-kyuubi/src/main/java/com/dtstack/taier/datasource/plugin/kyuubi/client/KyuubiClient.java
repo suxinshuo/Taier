@@ -93,6 +93,11 @@ public class KyuubiClient extends AbsRdbmsClient {
     }
 
     @Override
+    public Boolean testCon(ISourceDTO sourceDTO) {
+        return Boolean.TRUE;
+    }
+
+    @Override
     public Table getTable(ISourceDTO sourceDTO, SqlQueryDTO queryDTO) {
         // TODO: sxs 待实现
 
