@@ -292,6 +292,11 @@ public enum SourceDTOType {
         public ISourceDTO getSourceDTO(JSONObject dataJson, ConfigDTO configDTO) {
             KyuubiSourceDTO sourceDTO = KyuubiSourceDTO.builder().build();
             fillRdbmsSourceDTO(sourceDTO, dataJson, configDTO);
+            sourceDTO.setJdbcUrl(dataJson.getString(Consistent.JDBC_URL));
+            sourceDTO.setSchema(dataJson.getString(Consistent.SCHEMA));
+            sourceDTO.setDefaultFs(dataJson.getString(Consistent.DEFAULT_FS));
+            sourceDTO.setHadoopConfig(dataJson.getString(Consistent.HADOOP_CONFIG));
+            sourceDTO.setDefaultResultPath(dataJson.getString(Consistent.DEFAULT_RESULT_PATH));
             return sourceDTO;
         }
     },

@@ -18,7 +18,9 @@
 
 package com.dtstack.taier.datasource.plugin.kyuubi.client;
 
+import com.alibaba.fastjson.JSONObject;
 import com.dtstack.taier.datasource.api.downloader.IDownloader;
+import com.dtstack.taier.datasource.api.dto.ColumnMetaDTO;
 import com.dtstack.taier.datasource.api.dto.Table;
 import com.dtstack.taier.datasource.api.dto.source.KyuubiSourceDTO;
 import com.dtstack.taier.datasource.api.source.DataSourceType;
@@ -26,16 +28,22 @@ import com.dtstack.taier.datasource.api.dto.source.ISourceDTO;
 import com.dtstack.taier.datasource.api.dto.SqlQueryDTO;
 import com.dtstack.taier.datasource.api.exception.SourceException;
 import com.dtstack.taier.datasource.plugin.common.utils.DBUtil;
+import com.dtstack.taier.datasource.plugin.kyuubi.downloader.KyuubiJsonTextDownload;
+import com.dtstack.taier.datasource.plugin.kyuubi.util.HdfsUtils;
 import com.dtstack.taier.datasource.plugin.rdbms.AbsRdbmsClient;
 import com.dtstack.taier.datasource.plugin.rdbms.ConnFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class KyuubiClient extends AbsRdbmsClient {
@@ -99,16 +107,37 @@ public class KyuubiClient extends AbsRdbmsClient {
 
     @Override
     public Table getTable(ISourceDTO sourceDTO, SqlQueryDTO queryDTO) {
-        // TODO: sxs 待实现
-
-        return null;
+        Table table = new Table();
+        // 读第一行数据, 解析字段信息
+        String tableName = queryDTO.getTableName();
+        KyuubiSourceDTO kyuubiSourceDTO = (KyuubiSourceDTO) sourceDTO;
+        try {
+            HdfsUtils hdfsUtils = new HdfsUtils(kyuubiSourceDTO);
+            List<Path> filePaths = hdfsUtils.getFilePath(tableName);
+            if (CollectionUtils.isEmpty(filePaths)) {
+                return table;
+            }
+            JSONObject firstLine = hdfsUtils.getFirstLineJson(filePaths);
+            if (Objects.isNull(firstLine)) {
+                return table;
+            }
+            List<ColumnMetaDTO> columns = firstLine.keySet().stream().map(key -> {
+                ColumnMetaDTO columnMetaDTO = new ColumnMetaDTO();
+                columnMetaDTO.setKey(key);
+                columnMetaDTO.setType("string");
+                return columnMetaDTO;
+            }).collect(Collectors.toList());
+            table.setColumns(columns);
+            return table;
+        } catch (Exception e) {
+            log.error("Failed to query table information.", e);
+        }
+        return table;
     }
 
     @Override
     public IDownloader getDownloader(ISourceDTO source, SqlQueryDTO queryDTO) throws Exception {
-        // TODO: sxs 待实现
-
-        return null;
+        return new KyuubiJsonTextDownload(source, queryDTO);
     }
 
 }

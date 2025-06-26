@@ -21,6 +21,7 @@
 
         <log4j-core.version>2.17.1</log4j-core.version>
         <kyuubi.version>1.9.4</kyuubi.version>
+        <hadoop.version>2.7.3</hadoop.version>
     </properties>
 
     <dependencies>
@@ -33,9 +34,34 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- Hadoop Common -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>
+        <!-- Hadoop HDFS -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>
+
+        <!-- Hadoop Client -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.dtstack.taier</groupId>
             <artifactId>taier-datasource-plugin-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dtstack.taier</groupId>
+            <artifactId>taier-datasource-plugin-kerberos-core</artifactId>
         </dependency>
 
         <dependency>
