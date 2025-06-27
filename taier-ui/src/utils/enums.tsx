@@ -345,6 +345,7 @@ export function mappingTaskTypeToLanguage(taskType: TASK_TYPE_ENUM) {
         case TASK_TYPE_ENUM.SPARK_SQL:
         case TASK_TYPE_ENUM.DORIS:
         case TASK_TYPE_ENUM.CLICKHOUSE:
+        case TASK_TYPE_ENUM.KYUUBI_SQL:
             return TASK_LANGUAGE.SPARKSQL;
         case TASK_TYPE_ENUM.HIVE_SQL:
             return TASK_LANGUAGE.HIVESQL;
