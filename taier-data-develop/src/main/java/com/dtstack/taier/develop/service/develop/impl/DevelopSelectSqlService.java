@@ -41,6 +41,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * 执行选中的sql或者脚本
@@ -96,7 +98,6 @@ public class DevelopSelectSqlService {
         this.addSelectSql(jobId, tempTable, isSelectSql, tenantId, sql, userId, null, taskType, null);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void addSelectSql(String jobId, String tempTable, Integer isSelectSql, Long tenantId, String sql, Long userId, String parsedColumns,
                              Integer taskType, Long datasourceId) {
         DevelopSelectSql selectSql = new DevelopSelectSql();
@@ -117,22 +118,30 @@ public class DevelopSelectSqlService {
     /**
      * 使用任务的方式运行sql
      *
-     * @param parseResult
+     * @param parseResultList
      * @param userId
      * @param taskType
      * @param preJobId
      * @return
      */
-    public String runSqlByTask(ParseResult parseResult, Long userId,
+    public String runSqlByTask(List<ParseResult> parseResultList, Long userId,
                                Task task, Integer taskType, String preJobId) {
         ITaskRunner iTaskRunner = taskConfiguration.get(taskType);
         try {
-            BuildSqlVO buildSqlVO = iTaskRunner.buildSql(parseResult, userId, task);
+            BuildSqlVO buildSqlVO = new BuildSqlVO();
+            StringJoiner execSql = new StringJoiner(";\n");
+            StringJoiner originSql = new StringJoiner(";\n");
+            for (ParseResult parseResult : parseResultList) {
+                buildSqlVO = iTaskRunner.buildSql(parseResult, userId, task);
+                execSql.add(buildSqlVO.getSql());
+                originSql.add(parseResult.getOriginSql());
+            }
+            LOGGER.info("send sql to execute: {}", execSql);
             // 发送sql任务
-            sendSqlTask(buildSqlVO.getSql(), buildSqlVO.getTaskParam(), preJobId, task, taskType);
+            sendSqlTask(execSql.toString(), buildSqlVO.getTaskParam(), preJobId, task, taskType);
             // 记录job
             addSelectSql(preJobId, buildSqlVO.getTempTable(), buildSqlVO.getIsSelectSql(), task.getTenantId(),
-                    parseResult.getOriginSql(), userId, buildSqlVO.getParsedColumns(), taskType, task.getDatasourceId());
+                    originSql.toString(), userId, buildSqlVO.getParsedColumns(), taskType, task.getDatasourceId());
             return preJobId;
         } catch (Exception e) {
             throw new TaierDefineException("任务执行sql失败", e);

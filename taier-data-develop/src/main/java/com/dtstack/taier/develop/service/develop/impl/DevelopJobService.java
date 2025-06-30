@@ -43,6 +43,7 @@ import com.dtstack.taier.scheduler.impl.pojo.ParamTaskAction;
 import com.dtstack.taier.scheduler.service.ScheduleActionService;
 import com.dtstack.taier.scheduler.vo.action.ActionJobEntityVO;
 import com.dtstack.taier.scheduler.vo.action.ActionLogVO;
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -51,12 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 @Service
@@ -261,19 +257,21 @@ public class DevelopJobService {
      * @param userId
      * @param tenantId
      * @param taskId
-     * @param sql
+     * @param sqls
      * @param taskVariables
      * @return
      */
-    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Long taskId, String sql, List<Map<String, Object>> taskVariables) {
-        ExecuteResultVO result = new ExecuteResultVO();
+    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Long taskId, List<String> sqls, List<Map<String, Object>> taskVariables) {
+        ExecuteResultVO result = new ExecuteResultVO<>();
+        // 调度执行的时候就是通过 ; 拼接的多个语句, 这里跟调度逻辑进行统一
+        String sql = String.join(";", Optional.ofNullable(sqls).orElse(Lists.newArrayList()));
         try {
             Task task = developTaskService.getOneWithError(taskId);
             sql = jobParamReplace.paramReplace(sql, taskVariables, DateTime.now().toString("yyyyMMddHHmmss"));
+            LOGGER.info("startSqlImmediately sql: {}", sql);
             task.setSqlText(sql);
             ITaskRunner taskRunner = taskConfiguration.get(task.getTaskType());
-
-            result = taskRunner.startSqlImmediately(userId, tenantId, sql, task, taskVariables);
+            result = taskRunner.startSqlImmediately(userId, tenantId, task, taskVariables);
             result.setTaskType(task.getTaskType());
         } catch (Exception e) {
             LOGGER.warn("startSqlImmediately-->", e);

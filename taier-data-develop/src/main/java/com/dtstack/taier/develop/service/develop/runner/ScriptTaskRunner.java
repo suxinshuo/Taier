@@ -92,7 +92,8 @@ public class ScriptTaskRunner implements ITaskRunner {
     }
 
     @Override
-    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, String sql, Task task, List<Map<String, Object>> taskVariables) throws Exception {
+    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Task task, List<Map<String, Object>> taskVariables) throws Exception {
+        String sql = task.getSqlText();
         task.setTaskParams(TaskTemplateService.formatEnvTaskParams(task.getTaskParams()));
         sql = jobParamReplace.paramReplace(sql, taskVariables, DateTime.now().toString("yyyyMMddHHmmss"));
         return developScriptService.runScriptWithTask(userId, tenantId, sql, task);

@@ -40,12 +40,14 @@ import com.dtstack.taier.pluginapi.enums.TaskStatus;
 import com.dtstack.taier.scheduler.service.ClusterService;
 import com.dtstack.taier.scheduler.service.ComponentService;
 import com.dtstack.taier.scheduler.service.ScheduleActionService;
-import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public abstract class JdbcTaskRunner implements ITaskRunner {
 
@@ -83,13 +85,18 @@ public abstract class JdbcTaskRunner implements ITaskRunner {
     public abstract List<EScheduleJobType> support();
 
     @Override
-    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, String sql, Task task, List<Map<String, Object>> taskVariableList) {
+    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Task task, List<Map<String, Object>> taskVariableList) {
+        String sql = task.getSqlText();
+        if (StringUtils.isBlank(sql)) {
+            return new ExecuteResultVO<>();
+        }
+        List<String> sqlList = Arrays.stream(StringUtils.split(sql, ";")).collect(Collectors.toList());
         ExecuteResultVO<List<Object>> result = new ExecuteResultVO<>();
         result.setContinue(false);
         EScheduleJobType taskType = EScheduleJobType.getByTaskType(task.getTaskType());
         ISourceDTO sourceDTO = getSourceDTO(tenantId, userId, taskType.getType(), true, task.getDatasourceId());
-        if (RegexUtils.isQuery(sql)) {
-            List<List<Object>> executeResult = jdbcService.executeQuery(sourceDTO, Lists.newArrayList(sql), task.getTaskParams(), environmentContext.getSelectLimit());
+        if (RegexUtils.isQuery(sqlList.get(sqlList.size() - 1))) {
+            List<List<Object>> executeResult = jdbcService.executeQuery(sourceDTO, sqlList, task.getTaskParams(), environmentContext.getSelectLimit());
             result.setResult(executeResult);
         } else {
             jdbcService.executeQueryWithoutResult(sourceDTO, sql);

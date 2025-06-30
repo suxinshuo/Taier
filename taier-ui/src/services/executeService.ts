@@ -144,7 +144,7 @@ export default class ExecuteService extends Component<IExecuteStates> implements
             ...rawParams,
             uniqueKey: key,
         };
-        return this.exec(currentTabId, task, params, sqls, 0);
+        return this.exec(currentTabId, task, params, sqls);
     };
 
     public stopSql = (currentTabId: number, currentTabData: ITask, isSilent: boolean) => {
@@ -258,42 +258,18 @@ export default class ExecuteService extends Component<IExecuteStates> implements
         currentTabId: number,
         task: ITask,
         rawParams: Record<string, any>,
-        sqls: string[],
-        index: number
+        sqls: string[]
     ): Promise<void> => {
         const params = { ...rawParams };
-        params.sql = `${sqls[index]}`;
-        params.isEnd = sqls.length === index + 1;
-        if (index === 0) {
-            // 重置当前任务执行的日志信息
-            taskResultService.clearLogs(currentTabId.toString());
-        }
-        taskResultService.appendLogs(currentTabId.toString(), createLog(`第${index + 1}条任务开始执行`, 'info'));
+        params.sql = sqls;
+        taskResultService.appendLogs(currentTabId.toString(), createLog(`任务开始执行`, 'info'));
 
         // 任务执行
         if (checkExist(task.taskType)) {
             params.taskId = task.id;
             return API.execSQLImmediately<ITaskExecResultProps>(params)
                 .then((res) => this.succCall(res, currentTabId, task))
-                .then((res) => {
-                    // 执行结果正常，才会去判断是否继续后续步骤
-                    if (res) {
-                        const isContinue = this.judgeIfContinueExec(sqls, index);
-                        if (isContinue) {
-                            // 继续执行之前判断是否停止
-                            if (this.stopSign.get(currentTabId)) {
-                                this.stopSign.set(currentTabId, false);
-                                taskResultService.appendLogs(
-                                    currentTabId.toString(),
-                                    createLog(`用户主动取消请求！`, 'error')
-                                );
-                            } else {
-                                // 继续执行下一条 sql
-                                return this.exec(currentTabId, task, params, sqls, index + 1);
-                            }
-                        }
-                    }
-
+                .then(() => {
                     this.emit(EXECUTE_EVENT.onEndRun, currentTabId);
                 });
         }

@@ -37,7 +37,7 @@ public class DevelopJobStartSqlVO extends DtInsightAuthParam {
     private Long taskId;
 
     @ApiModelProperty(value = "sql语句", example = "show tables;", required = true)
-    private String sql;
+    private List<String> sql;
 
     @ApiModelProperty(value = "任务自定义参数", required = true)
     private List<Map<String, Object>> taskVariables;
@@ -73,11 +73,11 @@ public class DevelopJobStartSqlVO extends DtInsightAuthParam {
         this.taskId = taskId;
     }
 
-    public String getSql() {
+    public List<String> getSql() {
         return sql;
     }
 
-    public void setSql(String sql) {
+    public void setSql(List<String> sql) {
         this.sql = sql;
     }
 

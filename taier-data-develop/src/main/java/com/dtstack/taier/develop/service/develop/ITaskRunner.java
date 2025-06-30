@@ -43,13 +43,12 @@ public interface ITaskRunner {
      *
      * @param userId
      * @param tenantId
-     * @param sql
      * @param task
      * @param taskVariables
      * @return
      * @throws Exception
      */
-    ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, String sql, Task task, List<Map<String, Object>> taskVariables) throws Exception;
+    ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Task task, List<Map<String, Object>> taskVariables) throws Exception;
 
 
     /**

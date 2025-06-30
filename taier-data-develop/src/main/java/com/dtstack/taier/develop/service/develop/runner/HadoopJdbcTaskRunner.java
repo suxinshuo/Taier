@@ -61,11 +61,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author yuebai
@@ -101,11 +99,16 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
     public abstract List<EScheduleJobType> support();
 
     @Override
-    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, String sql, Task task, List<Map<String, Object>> taskVariableList) {
+    public ExecuteResultVO startSqlImmediately(Long userId, Long tenantId, Task task, List<Map<String, Object>> taskVariableList) {
+        String sql = task.getSqlText();
+        if (StringUtils.isBlank(sql)) {
+            return new ExecuteResultVO<>();
+        }
+        List<String> sqlList = Arrays.stream(StringUtils.split(sql, ";")).collect(Collectors.toList());
         ExecuteContent content = new ExecuteContent();
         content.setTenantId(tenantId)
                 .setUserId(userId)
-                .setSql(sql)
+                .setSqlList(sqlList)
                 .setTaskId(task.getId())
                 .setTaskType(task.getTaskType())
                 .setVariableList(taskVariableList);
@@ -113,7 +116,7 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
         prepareExecuteContent(content);
         if (divertTask(content)) {
             //直连jdbc
-            return super.startSqlImmediately(userId, tenantId, sql, task, taskVariableList);
+            return super.startSqlImmediately(userId, tenantId, task, taskVariableList);
         } else {
             //异步执行
             return startRunInScheduler(userId, task, content);
@@ -121,9 +124,9 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
     }
 
     public ExecuteResultVO startRunInScheduler(Long userId, Task task, ExecuteContent content) {
-        ParseResult parseResult = content.getParseResult();
+        List<ParseResult> parseResultList = content.getParseResultList();
         String jobId = actionService.generateUniqueSign();
-        developSelectSqlService.runSqlByTask(parseResult, userId, task, content.getTaskType(), jobId);
+        developSelectSqlService.runSqlByTask(parseResultList, userId, task, content.getTaskType(), jobId);
         ExecuteResultVO<List<Object>> result = new ExecuteResultVO<>();
         result.setJobId(jobId);
         result.setContinue(true);
@@ -137,10 +140,18 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
             return false;
         }
 
-        ParseResult parseResult = executeContent.getParseResult();
+        // 最后一个解析结果作为整个语句的解析结果, 因为最后一个语句决定了这个 SQL 是查询还是插入数据
+        List<ParseResult> parseResultList = executeContent.getParseResultList();
+        ParseResult parseResult = parseResultList.get(parseResultList.size() - 1);
         Long tenantId = executeContent.getTenantId();
         // 校验是否含有自定义函数
-        boolean useSelfFunction = developFunctionService.validContainSelfFunction(executeContent.getSql(), tenantId, null, executeContent.getTaskType());
+        boolean useSelfFunction = false;
+        for (String sql : executeContent.getSqlList()) {
+            useSelfFunction = developFunctionService.validContainSelfFunction(sql, tenantId, null, executeContent.getTaskType());
+            if (useSelfFunction) {
+                break;
+            }
+        }
 
         if (Objects.nonNull(parseResult) && Objects.nonNull(parseResult.getStandardSql())
                 && SqlRegexUtil.isSimpleQuery(parseResult.getStandardSql()) && !useSelfFunction) {
