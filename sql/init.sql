@@ -1842,7 +1842,7 @@ VALUES ('component_datasource_mapping', '3', '80', null, 18, 1, 'STRING', 'TDH 6
 INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default,
                   gmt_create, gmt_modified, is_deleted)
 VALUES ('spark_version', '3.2', '320', null, 2, 1, 'INTEGER', '', 1, now(),now(), 0);
-INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default, is_deleted) VALUES ('28', 'Kyuubi', '{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_params","env_params"],"formField":["datasource"],"renderKind":"editor","dataTypeCodes":[1004]}', null, 30, 0, 'STRING', '', 0, 0);
+INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default, is_deleted) VALUES ('28', 'Kyuubi', '{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_params","env_params"],"formField":["datasource","queue"],"renderKind":"editor","dataTypeCodes":[1004]}', null, 30, 0, 'STRING', '', 0, 0);
 COMMIT;
 
 -- ----------------------------

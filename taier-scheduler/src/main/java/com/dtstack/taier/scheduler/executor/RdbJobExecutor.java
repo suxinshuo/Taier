@@ -25,6 +25,7 @@ import com.dtstack.taier.datasource.api.base.ClientCache;
 import com.dtstack.taier.datasource.api.client.IClient;
 import com.dtstack.taier.datasource.api.dto.SqlQueryDTO;
 import com.dtstack.taier.datasource.api.dto.source.ISourceDTO;
+import com.dtstack.taier.datasource.api.dto.source.KyuubiSourceDTO;
 import com.dtstack.taier.datasource.api.dto.source.RdbmsSourceDTO;
 import com.dtstack.taier.pluginapi.JobClient;
 import com.dtstack.taier.pluginapi.enums.TaskStatus;
@@ -34,10 +35,14 @@ import com.dtstack.taier.scheduler.jobdealer.JobDealer;
 import com.dtstack.taier.scheduler.service.ScheduleJobCacheService;
 import com.dtstack.taier.scheduler.service.ScheduleJobExpandService;
 import com.dtstack.taier.scheduler.service.ScheduleJobService;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Objects;
+import java.util.Properties;
 
 /**
  * rdb executor
@@ -83,13 +88,32 @@ public class RdbJobExecutor {
         LOGGER.info("jobId:{} taskType:{} submit to job start run", jobClient.getJobId(), jobClient.getTaskType());
         // executeBatchQuery 执行不成功 会执行抛异常，不会返回false
         ISourceDTO sourceDTO = sourceDTOLoader.buildSourceDTO(jobClient.getDatasourceId());
-        if (sourceDTO instanceof RdbmsSourceDTO) {
+        Properties confProperties = jobClient.getConfProperties();
+        if (sourceDTO instanceof KyuubiSourceDTO) {
+            KyuubiSourceDTO kyuubiSourceDTO = (KyuubiSourceDTO) sourceDTO;
+            if (Objects.isNull(confProperties)) {
+                confProperties = new Properties();
+            }
+            // 提交任务队列
+            String queueName = jobClient.getQueueName();
+            // 任务名称
+            String jobName = jobClient.getJobName();
+            Object appNameObj = confProperties.get("spark.app.name");
+            if (Objects.isNull(appNameObj)) {
+                confProperties.put("spark.app.name", jobName);
+            }
+            Object queueNameObj = confProperties.get("spark.yarn.queue");
+            if (Objects.isNull(queueNameObj) && StringUtils.isNotBlank(queueName)) {
+                confProperties.put("spark.yarn.queue", queueName);
+            }
+            kyuubiSourceDTO.setProperties(JSONObject.toJSONString(confProperties));
+        } else if (sourceDTO instanceof RdbmsSourceDTO) {
             RdbmsSourceDTO rdbmsSourceDTO = (RdbmsSourceDTO) sourceDTO;
             try {
-                rdbmsSourceDTO.setProperties(JSONObject.toJSONString(jobClient.getConfProperties()));
+                rdbmsSourceDTO.setProperties(JSONObject.toJSONString(confProperties));
             } catch (Exception e) {
+                LOGGER.warn("task properties get failed.", e);
             }
-            sourceDTO = rdbmsSourceDTO;
         }
         IClient client = ClientCache.getClient(sourceDTO.getSourceType());
         client.executeBatchQuery(sourceDTO, SqlQueryDTO.builder().sql(jobClient.getSql()).build());

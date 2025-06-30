@@ -24,6 +24,7 @@ import com.dtstack.taier.datasource.api.exception.SourceException;
 import com.dtstack.taier.datasource.api.source.DataBaseType;
 import com.dtstack.taier.datasource.plugin.common.DtClassConsistent;
 import com.dtstack.taier.datasource.plugin.common.exception.ErrorCode;
+import com.dtstack.taier.datasource.plugin.common.utils.PropertiesUtil;
 import com.dtstack.taier.datasource.plugin.kyuubi.KyuubiErrorPattern;
 import com.dtstack.taier.datasource.plugin.rdbms.ConnFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +33,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.StringJoiner;
 
 public class KyuubiConnFactory extends ConnFactory {
 
@@ -48,7 +50,8 @@ public class KyuubiConnFactory extends ConnFactory {
         Properties properties = new Properties();
         properties.put(DtClassConsistent.PublicConsistent.USER, Optional.ofNullable(sourceDTO.getUsername()).orElse(""));
         properties.put(DtClassConsistent.PublicConsistent.PASSWORD, Optional.ofNullable(sourceDTO.getPassword()).orElse(""));
-        Connection connection = DriverManager.getConnection(kyuubiSourceDTO.getUrl(), properties);
+
+        Connection connection = DriverManager.getConnection(getConnUrl(kyuubiSourceDTO), properties);
 
         String schema = kyuubiSourceDTO.getSchema();
         if (StringUtils.isNotBlank(schema)) {
@@ -80,6 +83,34 @@ public class KyuubiConnFactory extends ConnFactory {
     @Override
     protected String getDropProc(String procName) {
         throw new SourceException(ErrorCode.NOT_SUPPORT.getDesc());
+    }
+
+    private String getConnUrl(KyuubiSourceDTO kyuubiSourceDTO) {
+        String url = kyuubiSourceDTO.getUrl();
+        Properties sparkProp = PropertiesUtil.convertToPureProp(kyuubiSourceDTO, null, "spark.");
+        if (sparkProp.isEmpty()) {
+            return url;
+        }
+        if (StringUtils.contains(url, "#")) {
+            url = StringUtils.split(url, "#")[0] + "#";
+            String vars = StringUtils.split(url, "#")[1];
+            for (String var : StringUtils.split(vars, ";")) {
+                String[] varMapping = StringUtils.split(var, "=");
+                if (varMapping.length != 2) {
+                    continue;
+                }
+                String key = StringUtils.trim(varMapping[0]);
+                String value = StringUtils.trim(varMapping[1]);
+                if (!sparkProp.containsKey(key)) {
+                    sparkProp.put(key, value);
+                }
+            }
+        } else {
+            url = StringUtils.endsWith(url, "#") ? url : url + "#";
+        }
+        StringJoiner joiner = new StringJoiner(";", url, "");
+        sparkProp.forEach((key, value) -> joiner.add(key + "=" + value));
+        return joiner.toString();
     }
 
 }

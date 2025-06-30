@@ -55,6 +55,15 @@ public class PropertiesUtil {
             properties.setProperty("password", rdbmsSourceDTO.getPassword());
         }
 
+        convertToPureProp(rdbmsSourceDTO, properties, prefix);
+
+        return properties;
+    }
+
+    public static Properties convertToPureProp(RdbmsSourceDTO rdbmsSourceDTO, Properties properties, String prefix) {
+        if (Objects.isNull(properties)) {
+            properties = new Properties();
+        }
         if (ReflectUtil.fieldExists(RdbmsSourceDTO.class, "properties") && StringUtils.isNotBlank(rdbmsSourceDTO.getProperties())) {
             JSONObject propertiesJson = JSONUtil.parseJsonObject(rdbmsSourceDTO.getProperties());
             for (String key : propertiesJson.keySet()) {
@@ -65,7 +74,6 @@ public class PropertiesUtil {
                 }
             }
         }
-
         return properties;
     }
 
