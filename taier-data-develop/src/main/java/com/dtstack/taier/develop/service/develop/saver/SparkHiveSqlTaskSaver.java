@@ -61,7 +61,7 @@ public class SparkHiveSqlTaskSaver extends DefaultTaskSaver {
 
     @Override
     public List<EScheduleJobType> support() {
-        return Lists.newArrayList(EScheduleJobType.SPARK_SQL, EScheduleJobType.HIVE_SQL);
+        return Lists.newArrayList(EScheduleJobType.SPARK_SQL, EScheduleJobType.HIVE_SQL, EScheduleJobType.KYUUBI_SPARK_SQL);
     }
 
     /**
@@ -74,7 +74,9 @@ public class SparkHiveSqlTaskSaver extends DefaultTaskSaver {
      */
     public String buildCustomFunctionSparkHiveSql(String sqlText, Long tenantId, Integer taskType) {
         String sqlPlus = SqlFormatUtil.formatSql(sqlText);
-        if (EScheduleJobType.SPARK_SQL.getType().equals(taskType) || EScheduleJobType.HIVE_SQL.getType().equals(taskType)) {
+        if (EScheduleJobType.SPARK_SQL.getType().equals(taskType)
+                || EScheduleJobType.HIVE_SQL.getType().equals(taskType)
+                || EScheduleJobType.KYUUBI_SPARK_SQL.getType().equals(taskType)) {
             String containFunction = developFunctionService.buildContainFunction(sqlText, tenantId, taskType);
             if (StringUtils.isNotBlank(containFunction)) {
                 sqlPlus = String.format(CREATE_TEMP_FUNCTION_SQL, containFunction, sqlPlus);
