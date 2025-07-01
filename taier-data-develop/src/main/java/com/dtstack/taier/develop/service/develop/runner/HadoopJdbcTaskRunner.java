@@ -232,6 +232,7 @@ public abstract class HadoopJdbcTaskRunner extends JdbcTaskRunner {
 
     @Override
     public ExecuteResultVO selectData(Task task, DevelopSelectSql selectSql, Long tenantId, Long userId, Boolean isRoot, Integer taskType) throws Exception {
+        LOGGER.info("selectData, selectSql: {}", selectSql);
         String jobId = selectSql.getJobId();
         ExecuteResultVO result = new ExecuteResultVO(jobId);
         if (selectSql.getIsSelectSql() == TempJobType.SELECT.getType()) {

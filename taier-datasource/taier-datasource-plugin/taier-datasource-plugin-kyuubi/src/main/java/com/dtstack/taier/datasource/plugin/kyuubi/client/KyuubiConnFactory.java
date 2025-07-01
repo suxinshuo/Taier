@@ -92,8 +92,8 @@ public class KyuubiConnFactory extends ConnFactory {
             return url;
         }
         if (StringUtils.contains(url, "#")) {
-            url = StringUtils.split(url, "#")[0] + "#";
             String vars = StringUtils.split(url, "#")[1];
+            url = StringUtils.split(url, "#")[0] + "#";
             for (String var : StringUtils.split(vars, ";")) {
                 String[] varMapping = StringUtils.split(var, "=");
                 if (varMapping.length != 2) {
