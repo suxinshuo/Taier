@@ -22,6 +22,7 @@ import com.dtstack.taier.base.enums.ClassLoaderType;
 import org.apache.flink.api.common.ProgramDescription;
 import org.apache.flink.client.ClientUtils;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.security.FlinkSecurityManager;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.JarUtils;
@@ -59,6 +60,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /**
  * This class encapsulates represents a program, packaged in a jar file. It supplies functionality
  * to extract nested libraries, search for the program entry point, and extract a program plan.
+ * 通过 cache 加载 classloader.
  */
 public class PackagedProgram implements AutoCloseable {
 
@@ -221,7 +223,12 @@ public class PackagedProgram implements AutoCloseable {
      * local execution by default.
      */
     public void invokeInteractiveModeForExecution() throws ProgramInvocationException {
-        callMainMethod(mainClass, args);
+        FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
+        try {
+            callMainMethod(mainClass, args);
+        } finally {
+            FlinkSecurityManager.unmonitorUserSystemExitForCurrentThread();
+        }
     }
 
     /**

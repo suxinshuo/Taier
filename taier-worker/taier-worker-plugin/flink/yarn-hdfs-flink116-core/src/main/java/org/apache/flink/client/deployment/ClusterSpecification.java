@@ -29,13 +29,14 @@ import java.util.List;
 
 /**
  * Description of the cluster to start by the {@link ClusterDescriptor}.
+ * 增加 newInstance, 为了延迟构建 PackagedProgram.
  * @author xiuzhu
  */
 public final class ClusterSpecification {
 
     //todo 更新默认值
     private int jobMasterMemoryMB = 768;
-    private int taskManagerMemoryMB = 768;
+    private int taskManagerMemoryMB = 1024;
     private int slotsPerTaskManager = 1;
 
     private int priority = 0;

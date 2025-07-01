@@ -37,12 +37,12 @@ import org.apache.flink.configuration.DeploymentOptions;
 import org.apache.flink.core.execution.DetachedJobExecutionResult;
 import org.apache.flink.core.execution.PipelineExecutorServiceLoader;
 import org.apache.flink.runtime.client.JobInitializationException;
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobmaster.JobResult;
-import org.apache.flink.shaded.guava18.com.google.common.base.Splitter;
-import org.apache.flink.shaded.guava18.com.google.common.collect.Iterables;
+import org.apache.flink.shaded.guava30.com.google.common.base.Splitter;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Iterables;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.FlinkUserCodeClassLoaders;
 import org.apache.flink.util.SerializedThrowable;
 import org.apache.flink.util.function.SupplierWithException;
 import org.slf4j.Logger;
@@ -64,7 +64,10 @@ import java.util.concurrent.TimeoutException;
 import static org.apache.flink.util.FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-/** Utility functions for Flink client. */
+/**
+ * Utility functions for Flink client.
+ * 增加 submitJob、buildUserCodeClassLoader 方法, 在 FlinkClient 里面使用.
+ */
 public enum ClientUtils {
     ;
 
@@ -84,21 +87,7 @@ public enum ClientUtils {
         for (int i = 0; i < classpaths.size(); i++) {
             urls[i + jars.size()] = classpaths.get(i);
         }
-        final String[] alwaysParentFirstLoaderPatterns =
-                CoreOptions.getParentFirstLoaderPatterns(configuration);
-        final String classLoaderResolveOrder =
-                configuration.getString(CoreOptions.CLASSLOADER_RESOLVE_ORDER);
-        FlinkUserCodeClassLoaders.ResolveOrder resolveOrder =
-                FlinkUserCodeClassLoaders.ResolveOrder.fromString(classLoaderResolveOrder);
-        final boolean checkClassloaderLeak =
-                configuration.getBoolean(CoreOptions.CHECK_LEAKED_CLASSLOADER);
-        return FlinkUserCodeClassLoaders.create(
-                resolveOrder,
-                urls,
-                parent,
-                alwaysParentFirstLoaderPatterns,
-                NOOP_EXCEPTION_HANDLER,
-                checkClassloaderLeak);
+        return FlinkUserCodeClassLoaders.create(urls, parent, configuration);
     }
 
     public static void executeProgram(

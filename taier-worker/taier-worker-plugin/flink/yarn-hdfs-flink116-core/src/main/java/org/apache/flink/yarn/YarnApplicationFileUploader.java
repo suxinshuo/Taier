@@ -24,6 +24,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.client.deployment.ClusterDeploymentException;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.IOUtils;
 import org.apache.flink.util.function.FunctionUtils;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
@@ -256,7 +257,7 @@ class YarnApplicationFileUploader implements AutoCloseable {
      * @param shipFiles local or remote files to register as Yarn local resources
      * @param localResourcesDirectory the directory the localResources are uploaded to
      * @param resourceType type of the resource, which can be one of FILE, PATTERN, or ARCHIVE
-     * @return list of class paths with the the proper resource keys from the registration
+     * @return list of class paths with the proper resource keys from the registration
      */
     List<String> registerMultipleLocalResources(
             final Collection<Path> shipFiles,
@@ -406,8 +407,7 @@ class YarnApplicationFileUploader implements AutoCloseable {
             final Path homeDirectory,
             final List<Path> providedLibDirs,
             final ApplicationId applicationId,
-            final int fileReplication
-    )
+            final int fileReplication)
             throws IOException {
         return new YarnApplicationFileUploader(
                 fileSystem, homeDirectory, providedLibDirs, applicationId, fileReplication);

@@ -37,6 +37,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -61,15 +62,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -208,13 +201,14 @@ public class PerJobClientManager extends AbstractClientManager {
         // class load
         String classloaderCache = configuration.getString(ClassLoaderType.CLASSLOADER_DTSTACK_CACHE, ClassLoaderType.CLASSLOADER_DTSTACK_CACHE_TRUE);
         configuration.setString(ClassLoaderType.CLASSLOADER_DTSTACK_CACHE, classloaderCache);
-        String append = configuration.getString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL);
+        List<String> append = configuration.get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL);
         if (jobClient.getJobType() == EJobType.SQL || jobClient.getJobType() == EJobType.SYNC) {
             String dtstackAppend = ConfigConstant.PARENT_FIRST_LOADER_PATTERNS_DEFAULT;
-            if (StringUtils.isNotEmpty(append)) {
-                dtstackAppend = dtstackAppend + ";" + append;
+            List<String> dtstackAppendList = Arrays.stream(StringUtils.split(dtstackAppend, ";")).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(append)) {
+                dtstackAppendList.addAll(append);
             }
-            configuration.setString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppend);
+            configuration.set(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppendList);
         }
 
         return configuration;

@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.runtime.execution.librarycache;
+package org.apache.flink.util;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.CoreOptions;
-import org.apache.flink.util.ChildFirstClassLoader;
-import org.apache.flink.util.FlinkUserCodeClassLoader;
+import org.apache.flink.configuration.ReadableConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -32,12 +32,21 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Gives the URLClassLoader a nicer name for debugging purposes. */
+import static org.apache.flink.util.FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER;
+
+/**
+ * Gives the URLClassLoader a nicer name for debugging purposes.
+ * 增加 URLClassLoader create(
+ *             ResolveOrder resolveOrder, URL[] urls, ClassLoader parent,
+ *             String[] alwaysParentFirstPatterns, List<String> childFirstPatterns)
+ * 方法, 在 ClientUtils 里面调用了.
+ */
+@Internal
 public class FlinkUserCodeClassLoaders {
 
     private FlinkUserCodeClassLoaders() {}
 
-    public static URLClassLoader parentFirst(
+    public static MutableURLClassLoader parentFirst(
             URL[] urls,
             ClassLoader parent,
             Consumer<Throwable> classLoadingExceptionHandler,
@@ -47,7 +56,7 @@ public class FlinkUserCodeClassLoaders {
         return wrapWithSafetyNet(classLoader, checkClassLoaderLeak);
     }
 
-    public static URLClassLoader childFirst(
+    public static MutableURLClassLoader childFirst(
             URL[] urls,
             ClassLoader parent,
             String[] alwaysParentFirstPatterns,
@@ -59,7 +68,24 @@ public class FlinkUserCodeClassLoaders {
         return wrapWithSafetyNet(classLoader, checkClassLoaderLeak);
     }
 
-    public static URLClassLoader create(
+    public static MutableURLClassLoader create(
+            final URL[] urls, final ClassLoader parent, final ReadableConfig config) {
+        final String[] alwaysParentFirstLoaderPatterns =
+                CoreOptions.getParentFirstLoaderPatterns(config);
+        final String classLoaderResolveOrder = config.get(CoreOptions.CLASSLOADER_RESOLVE_ORDER);
+        final FlinkUserCodeClassLoaders.ResolveOrder resolveOrder =
+                FlinkUserCodeClassLoaders.ResolveOrder.fromString(classLoaderResolveOrder);
+        final boolean checkClassloaderLeak = config.get(CoreOptions.CHECK_LEAKED_CLASSLOADER);
+        return create(
+                resolveOrder,
+                urls,
+                parent,
+                alwaysParentFirstLoaderPatterns,
+                NOOP_EXCEPTION_HANDLER,
+                checkClassloaderLeak);
+    }
+
+    public static MutableURLClassLoader create(
             ResolveOrder resolveOrder,
             URL[] urls,
             ClassLoader parent,
@@ -110,8 +136,7 @@ public class FlinkUserCodeClassLoaders {
         return new ParentFirstClassLoader(urls, parent, FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER);
     }
 
-
-    private static URLClassLoader wrapWithSafetyNet(
+    private static MutableURLClassLoader wrapWithSafetyNet(
             FlinkUserCodeClassLoader classLoader, boolean check) {
         return check
                 ? new SafetyNetWrapperClassLoader(classLoader, classLoader.getParent())
@@ -137,6 +162,7 @@ public class FlinkUserCodeClassLoaders {
     /**
      * Regular URLClassLoader that first loads from the parent and only after that from the URLs.
      */
+    @Internal
     public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {
 
         ParentFirstClassLoader(
@@ -157,13 +183,14 @@ public class FlinkUserCodeClassLoaders {
      * delegate is nulled and can be garbage collected. Additional class resolution will be resolved
      * solely through the bootstrap classloader and most likely result in ClassNotFound exceptions.
      */
-    private static class SafetyNetWrapperClassLoader extends URLClassLoader implements Closeable {
+    @Internal
+    public static class SafetyNetWrapperClassLoader extends MutableURLClassLoader {
         private static final Logger LOG =
                 LoggerFactory.getLogger(SafetyNetWrapperClassLoader.class);
 
-        private volatile FlinkUserCodeClassLoader inner;
+        protected volatile FlinkUserCodeClassLoader inner;
 
-        SafetyNetWrapperClassLoader(FlinkUserCodeClassLoader inner, ClassLoader parent) {
+        protected SafetyNetWrapperClassLoader(FlinkUserCodeClassLoader inner, ClassLoader parent) {
             super(new URL[0], parent);
             this.inner = inner;
         }
@@ -206,6 +233,11 @@ public class FlinkUserCodeClassLoaders {
         }
 
         @Override
+        public void addURL(URL url) {
+            ensureInner().addURL(url);
+        }
+
+        @Override
         public URL getResource(String name) {
             return ensureInner().getResource(name);
         }
@@ -213,6 +245,11 @@ public class FlinkUserCodeClassLoaders {
         @Override
         public Enumeration<URL> getResources(String name) throws IOException {
             return ensureInner().getResources(name);
+        }
+
+        @Override
+        public URL[] getURLs() {
+            return ensureInner().getURLs();
         }
 
         static {

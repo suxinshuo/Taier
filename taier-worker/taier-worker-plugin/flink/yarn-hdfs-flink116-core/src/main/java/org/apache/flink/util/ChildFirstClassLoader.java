@@ -32,6 +32,7 @@ import java.util.function.Consumer;
  *
  * <p>{@link #getResourceAsStream(String)} uses {@link #getResource(String)} internally so we don't
  * override that.
+ * 增加 ChildFirstClassLoader 新构造器, FlinkUserCodeClassLoaders 用到.
  */
 public final class ChildFirstClassLoader extends FlinkUserCodeClassLoader {
 

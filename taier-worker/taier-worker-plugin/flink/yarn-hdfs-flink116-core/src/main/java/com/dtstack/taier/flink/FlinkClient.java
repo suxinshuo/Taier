@@ -81,6 +81,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.ResourceManagerOptions;
+import org.apache.flink.core.execution.SavepointFormatType;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.yarn.YarnClusterDescriptor;
@@ -102,12 +103,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -939,7 +935,7 @@ public class FlinkClient extends AbstractClient {
                                 if (jobIdentifier.isForceCancel()) {
                                     return killApplication(jobIdentifier);
                                 }
-                                CompletableFuture completableFuture = targetClusterClient.cancelWithSavepoint(jobId, null);
+                                CompletableFuture completableFuture = targetClusterClient.cancelWithSavepoint(jobId, null, SavepointFormatType.DEFAULT);
                                 Object ask = completableFuture.get(jobIdentifier.getTimeout(), TimeUnit.MILLISECONDS);
                                 LOG.info("taskId: {}, job[{}] cancelWithSavepoint success, savepoint path {}",
                                         taskId, engineJobId, ask.toString());
@@ -1118,7 +1114,8 @@ public class FlinkClient extends AbstractClient {
             String[] programArgs = args.toArray(new String[args.size()]);
             Configuration flinkConfig = clientManager.getFlinkConfiguration();
             String dtstackAppend = ConfigConstant.PARENT_FIRST_LOADER_PATTERNS_DEFAULT;
-            flinkConfig.setString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppend);
+            List<String> dtstackAppendList = Arrays.stream(StringUtils.split(dtstackAppend, ";")).collect(Collectors.toList());
+            flinkConfig.set(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppendList);
             PackagedProgram program = PackagedProgram.newBuilder()
                     .setJarFile(new File(coreJarInfo.getJarPath()))
                     .setUserClassPaths(attachJarUrls)

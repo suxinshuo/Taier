@@ -29,6 +29,7 @@ import com.dtstack.taier.pluginapi.exception.PluginDefineException;
 import com.dtstack.taier.pluginapi.loader.DtClassLoader;
 import com.dtstack.taier.pluginapi.util.MathUtil;
 import com.dtstack.taier.pluginapi.util.PublicUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.client.deployment.ClusterSpecification;
@@ -55,6 +56,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Reason:
@@ -161,14 +163,15 @@ public class FlinkUtil {
         flinkConfig.setString(ClassLoaderType.CLASSLOADER_DTSTACK_CACHE, classloaderCache);
 
         // 指定采用parent ClassLoader优先加载的类
-        String append = flinkConfig.getString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL);
+        List<String> append = flinkConfig.get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL);
         if (jobType == EJobType.SQL || jobType == EJobType.SYNC) {
             //String dtstackAppend = "com.fasterxml.jackson.";
             String dtstackAppend = ConfigConstant.PARENT_FIRST_LOADER_PATTERNS_DEFAULT;
-            if (StringUtils.isNotEmpty(append)) {
-                dtstackAppend = dtstackAppend + ";" + append;
+            List<String> dtstackAppendList = Arrays.stream(StringUtils.split(dtstackAppend, ";")).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(append)) {
+                dtstackAppendList.addAll(append);
             }
-            flinkConfig.setString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppend);
+            flinkConfig.set(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, dtstackAppendList);
         }
 
         PackagedProgram program = PackagedProgram.newBuilder()

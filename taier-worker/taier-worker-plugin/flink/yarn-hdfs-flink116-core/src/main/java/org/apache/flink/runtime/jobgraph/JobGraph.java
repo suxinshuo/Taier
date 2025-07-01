@@ -23,14 +23,19 @@ import org.apache.flink.api.common.InvalidProgramException;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.cache.DistributedCache;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.StateChangelogOptionsInternal;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.blob.PermanentBlobKey;
+import org.apache.flink.runtime.executiongraph.JobStatusHook;
 import org.apache.flink.runtime.jobgraph.tasks.JobCheckpointingSettings;
-import org.apache.flink.runtime.jobmanager.scheduler.CoLocationGroupDesc;
+import org.apache.flink.runtime.jobmanager.scheduler.CoLocationGroup;
 import org.apache.flink.runtime.jobmanager.scheduler.SlotSharingGroup;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.IterableUtils;
 import org.apache.flink.util.SerializedValue;
+import org.apache.flink.util.TernaryBoolean;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -60,6 +65,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  *
  * <p>The JobGraph defines the job-wide configuration settings, while each vertex and intermediate
  * result define the characteristics of the concrete operation and intermediate data.
+ * 增加 vertexOperatorNames, 以及对应的 get/set 方法.
  */
 public class JobGraph implements Serializable {
 
@@ -80,8 +86,7 @@ public class JobGraph implements Serializable {
     /** Name of this job. */
     private final String jobName;
 
-    /** The mode in which the job is scheduled. */
-    private ScheduleMode scheduleMode = ScheduleMode.LAZY_FROM_SOURCES;
+    private JobType jobType = JobType.BATCH;
 
     /**
      * Whether approximate local recovery is enabled. This flag will be removed together with legacy
@@ -115,6 +120,9 @@ public class JobGraph implements Serializable {
     /** List of classpaths required to run this job. */
     private List<URL> classpaths = Collections.emptyList();
 
+    /** List of user-defined job status change hooks. */
+    private List<JobStatusHook> jobStatusHooks = Collections.emptyList();
+
     /** save the relation of JobVertexID and OperatorNames. */
     private Map<JobVertexID, List<String>> vertexOperatorNames = new HashMap<>();
 
@@ -131,6 +139,17 @@ public class JobGraph implements Serializable {
     }
 
     /**
+     * Constructs a new job graph with no name, a random job ID, the given {@link ExecutionConfig},
+     * and the given job vertices. The ExecutionConfig will be serialized and can't be modified
+     * afterwards.
+     *
+     * @param vertices The vertices to add to the graph.
+     */
+    public JobGraph(JobVertex... vertices) {
+        this(null, null, vertices);
+    }
+
+    /**
      * Constructs a new job graph with the given job ID (or a random ID, if {@code null} is passed),
      * the given name and the given execution configuration (see {@link ExecutionConfig}). The
      * ExecutionConfig will be serialized and can't be modified afterwards.
@@ -138,7 +157,7 @@ public class JobGraph implements Serializable {
      * @param jobId The id of the job. A random ID is generated, if {@code null} is passed.
      * @param jobName The name of the job.
      */
-    public JobGraph(JobID jobId, String jobName) {
+    public JobGraph(@Nullable JobID jobId, String jobName) {
         this.jobID = jobId == null ? new JobID() : jobId;
         this.jobName = jobName == null ? "(unnamed job)" : jobName;
 
@@ -151,29 +170,6 @@ public class JobGraph implements Serializable {
     }
 
     /**
-     * Constructs a new job graph with no name, a random job ID, the given {@link ExecutionConfig},
-     * and the given job vertices. The ExecutionConfig will be serialized and can't be modified
-     * afterwards.
-     *
-     * @param vertices The vertices to add to the graph.
-     */
-    public JobGraph(JobVertex... vertices) {
-        this(null, vertices);
-    }
-
-    /**
-     * Constructs a new job graph with the given name, the given {@link ExecutionConfig}, a random
-     * job ID, and the given job vertices. The ExecutionConfig will be serialized and can't be
-     * modified afterwards.
-     *
-     * @param jobName The name of the job.
-     * @param vertices The vertices to add to the graph.
-     */
-    public JobGraph(String jobName, JobVertex... vertices) {
-        this(null, jobName, vertices);
-    }
-
-    /**
      * Constructs a new job graph with the given name, the given {@link ExecutionConfig}, the given
      * jobId or a random one if null supplied, and the given job vertices. The ExecutionConfig will
      * be serialized and can't be modified afterwards.
@@ -182,7 +178,7 @@ public class JobGraph implements Serializable {
      * @param jobName The name of the job.
      * @param vertices The vertices to add to the graph.
      */
-    public JobGraph(JobID jobId, String jobName, JobVertex... vertices) {
+    public JobGraph(@Nullable JobID jobId, String jobName, JobVertex... vertices) {
         this(jobId, jobName);
 
         for (JobVertex vertex : vertices) {
@@ -234,12 +230,12 @@ public class JobGraph implements Serializable {
         return serializedExecutionConfig;
     }
 
-    public void setScheduleMode(ScheduleMode scheduleMode) {
-        this.scheduleMode = scheduleMode;
+    public void setJobType(JobType type) {
+        this.jobType = type;
     }
 
-    public ScheduleMode getScheduleMode() {
-        return scheduleMode;
+    public JobType getJobType() {
+        return jobType;
     }
 
     public void enableApproximateLocalRecovery(boolean enabled) {
@@ -278,7 +274,14 @@ public class JobGraph implements Serializable {
      */
     public void setExecutionConfig(ExecutionConfig executionConfig) throws IOException {
         checkNotNull(executionConfig, "ExecutionConfig must not be null.");
-        this.serializedExecutionConfig = new SerializedValue<>(executionConfig);
+        setSerializedExecutionConfig(new SerializedValue<>(executionConfig));
+    }
+
+    void setSerializedExecutionConfig(SerializedValue<ExecutionConfig> serializedExecutionConfig) {
+        this.serializedExecutionConfig =
+                checkNotNull(
+                        serializedExecutionConfig,
+                        "The serialized ExecutionConfig must not be null.");
     }
 
     /**
@@ -334,15 +337,16 @@ public class JobGraph implements Serializable {
         return Collections.unmodifiableSet(slotSharingGroups);
     }
 
-    public Set<CoLocationGroupDesc> getCoLocationGroupDescriptors() {
-        // invoke distinct() on CoLocationGroup first to avoid creating
-        // multiple CoLocationGroupDec from one CoLocationGroup
-        final Set<CoLocationGroupDesc> coLocationGroups =
+    /**
+     * Returns all {@link CoLocationGroup} instances associated with this {@code JobGraph}.
+     *
+     * @return The associated {@code CoLocationGroup} instances.
+     */
+    public Set<CoLocationGroup> getCoLocationGroups() {
+        final Set<CoLocationGroup> coLocationGroups =
                 IterableUtils.toStream(getVertices())
                         .map(JobVertex::getCoLocationGroup)
                         .filter(Objects::nonNull)
-                        .distinct()
-                        .map(CoLocationGroupDesc::from)
                         .collect(Collectors.toSet());
         return Collections.unmodifiableSet(coLocationGroups);
     }
@@ -643,6 +647,25 @@ public class JobGraph implements Serializable {
             DistributedCache.writeFileInfoToConfig(
                     userArtifact.getKey(), userArtifact.getValue(), jobConfiguration);
         }
+    }
+
+    public void setChangelogStateBackendEnabled(TernaryBoolean changelogStateBackendEnabled) {
+        if (changelogStateBackendEnabled == null
+                || TernaryBoolean.UNDEFINED.equals(changelogStateBackendEnabled)) {
+            return;
+        }
+        this.jobConfiguration.setBoolean(
+                StateChangelogOptionsInternal.ENABLE_CHANGE_LOG_FOR_APPLICATION,
+                changelogStateBackendEnabled.getAsBoolean());
+    }
+
+    public void setJobStatusHooks(List<JobStatusHook> hooks) {
+        checkNotNull(hooks, "Setting the JobStatusHook list to null is not allowed.");
+        this.jobStatusHooks = hooks;
+    }
+
+    public List<JobStatusHook> getJobStatusHooks() {
+        return this.jobStatusHooks;
     }
 
     /**
