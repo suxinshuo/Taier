@@ -18,3 +18,7 @@ INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_
 INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default) VALUES ('typename_mapping', 'yarn3-hdfs3-flink116', '-115', null, 6, 0, 'LONG', '', 0);
 UPDATE dict SET dict_value = '{"HDFS":{"HDFS":"yarn3-hdfs3-hadoop3","FLINK":[{"112":"yarn3-hdfs3-flink112","116":"yarn3-hdfs3-flink116"}],"SPARK":[{"320":"yarn3-hdfs3-spark320"},{"210":"yarn3-hdfs3-spark210"}],"SCRIPT":"yarn3-hdfs3-script"},"YARN":"yarn3"}'
     WHERE dict_value = '{"HDFS": {"HDFS": "yarn3-hdfs3-hadoop3", "FLINK": [{"112": "yarn3-hdfs3-flink112"}], "SPARK": [{"320": "yarn3-hdfs3-spark320"}, {"210": "yarn3-hdfs3-spark210"}], "SCRIPT": "yarn3-hdfs3-script"}, "YARN": "yarn3"}';
+
+-- 同步任务支持选择 flink 版本
+UPDATE dict SET dict_value = '{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_config","task_params","env_params"],"formField":["createModel","syncModel","componentVersion"],"renderKind":"dataSync","renderCondition":{"key":"createModel","value":0,"renderKind":"editor"},"actionsCondition":{"key":"createModel","value":0,"actions":["CONVERT_TASK","SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"]}}'
+    WHERE dict_code = '2';

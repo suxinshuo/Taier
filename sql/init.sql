@@ -2560,4 +2560,7 @@ COMMIT;
 -- 2023-11-22 add by xjs1983boy OracleSQL to dict
 insert into dict(dict_code,dict_name,dict_value,dict_desc,type,sort,data_type,depend_name,is_default,gmt_create,gmt_modified,is_deleted)
 values('27','OracleSQL','{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_params","env_params"],"formField":["datasource"],"renderKind":"editor","dataTypeCodes":[2]}','',30,0,'STRING','',0,'2023-11-06 13:35:00','2023-11-06 13:35:00',0);
+-- 同步任务支持选择 flink 版本
+UPDATE dict SET dict_value = '{"actions":["SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"],"barItem":["task","dependency","task_config","task_params","env_params"],"formField":["createModel","syncModel","componentVersion"],"renderKind":"dataSync","renderCondition":{"key":"createModel","value":0,"renderKind":"editor"},"actionsCondition":{"key":"createModel","value":0,"actions":["CONVERT_TASK","SAVE_TASK","RUN_TASK","STOP_TASK","SUBMIT_TASK","OPERATOR_TASK"]}}'
+WHERE dict_code = '2';
 COMMIT;
