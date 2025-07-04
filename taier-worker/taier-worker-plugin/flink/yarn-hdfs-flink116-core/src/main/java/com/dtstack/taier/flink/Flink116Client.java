@@ -116,9 +116,9 @@ import java.util.stream.IntStream;
  * @create: 2021/07/15
  */
 
-public class FlinkClient extends AbstractClient {
+public class Flink116Client extends AbstractClient {
 
-    static final Logger LOG = LoggerFactory.getLogger(FlinkClient.class);
+    static final Logger LOG = LoggerFactory.getLogger(Flink116Client.class);
 
     private FlinkConfig flinkConfig;
 

@@ -47,19 +47,17 @@ public class SqlGenerateFactory {
         }
         JSONObject dataJson = JSON.parseObject(Base64Util.baseDecode(dataSource.getDataJson()));
 
+        FlinkVersion flinkVersion = FlinkVersion.getByVersion(versionValue);
+        if (Objects.isNull(flinkVersion)) {
+            throw new DtCenterDefException(String.format("不支持的表类型:%s, versionValue:%s", tableType.getTableType(), versionValue));
+        }
         switch (tableType) {
             case SIDE:
-                if (StringUtils.isNotBlank(versionValue) && FlinkVersion.FLINK_112.getVersion().equals(versionValue)) {
-                    return TableFactory.getSideTable(dataSource.getDataTypeCode(), dataJson, paramJson, FlinkVersion.FLINK_112).getCreateSql();
-                }
+                return TableFactory.getSideTable(dataSource.getDataTypeCode(), dataJson, paramJson, flinkVersion).getCreateSql();
             case SINK:
-                if (StringUtils.isNotBlank(versionValue) && FlinkVersion.FLINK_112.getVersion().equals(versionValue)) {
-                    return TableFactory.getSinkTable(dataSource.getDataTypeCode(), dataJson, paramJson, FlinkVersion.FLINK_112).getCreateSql();
-                }
+                return TableFactory.getSinkTable(dataSource.getDataTypeCode(), dataJson, paramJson, flinkVersion).getCreateSql();
             case SOURCE:
-                if (StringUtils.isNotBlank(versionValue) && FlinkVersion.FLINK_112.getVersion().equals(versionValue)) {
-                    return TableFactory.getSourceTable(dataSource.getDataTypeCode(), dataJson, paramJson, FlinkVersion.FLINK_112).getCreateSql();
-                }
+                return TableFactory.getSourceTable(dataSource.getDataTypeCode(), dataJson, paramJson, flinkVersion).getCreateSql();
             default:
                 throw new DtCenterDefException(String.format("不支持的表类型:%s", tableType.getTableType()));
         }

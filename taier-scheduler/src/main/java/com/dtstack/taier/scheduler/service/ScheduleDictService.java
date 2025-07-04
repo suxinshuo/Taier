@@ -110,7 +110,7 @@ public class ScheduleDictService {
         return groupPairs;
     }
 
-    public String convertVersionNameToValue(String componentVersion, Integer taskType,  Integer deployMode) {
+    public String convertVersionNameToValue(String componentVersion, Integer taskType, Integer deployMode) {
         if (StringUtils.isBlank(componentVersion)) {
             return "";
         }

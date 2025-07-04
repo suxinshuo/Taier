@@ -961,6 +961,12 @@ public class DevelopTaskService extends ServiceImpl<DevelopTaskMapper, Task> {
                 .eq(Task::getTenantId, tenantId));
     }
 
+    public Task getByJobId(String jobId, Long tenantId) {
+        return this.developTaskMapper.selectOne(Wrappers.lambdaQuery(Task.class)
+                .eq(Task::getJobId, jobId)
+                .eq(Task::getTenantId, tenantId));
+    }
+
     public List<Task> getByLikeName(String name, Long tenantId) {
         return this.developTaskMapper.selectList(Wrappers.lambdaQuery(Task.class)
                 .like(Task::getName, name)
@@ -1058,8 +1064,17 @@ public class DevelopTaskService extends ServiceImpl<DevelopTaskMapper, Task> {
      */
     private Comparator<DevelopTaskGetComponentVersionResultVO> sortComponentVersion() {
         return (o1, o2) -> {
-            String[] version1 = o1.getComponentVersion().split("\\.");
-            String[] version2 = o2.getComponentVersion().split("\\.");
+            String componentVersion1 = o1.getComponentVersion();
+            String componentVersion2 = o2.getComponentVersion();
+            if (StringUtils.contains(componentVersion1, "-")) {
+                componentVersion1 = StringUtils.split(componentVersion1, "-")[0];
+            }
+            if (StringUtils.contains(componentVersion2, "-")) {
+                componentVersion2 = StringUtils.split(componentVersion2, "-")[0];
+            }
+
+            String[] version1 = componentVersion1.split("\\.");
+            String[] version2 = componentVersion2.split("\\.");
             if (version1.length > 0 && version2.length > 0) {
                 for (int i = 0; i < version1.length; i++) {
                     try {
@@ -1075,7 +1090,7 @@ public class DevelopTaskService extends ServiceImpl<DevelopTaskMapper, Task> {
                     }
                 }
             }
-            return o2.getComponentVersion().compareTo(o1.getComponentVersion());
+            return componentVersion2.compareTo(componentVersion1);
         };
     }
 

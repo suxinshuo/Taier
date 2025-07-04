@@ -28,7 +28,7 @@
 
         <dependency>
             <groupId>com.dtstack.taier</groupId>
-            <artifactId>taier-worker-plugin.flink.yarn-hdfs-flink112-core</artifactId>
+            <artifactId>taier-worker-plugin.flink.yarn-hdfs-flink116-core</artifactId>
             <version>1.0.0</version>
         </dependency>
 

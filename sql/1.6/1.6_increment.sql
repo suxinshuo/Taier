@@ -12,3 +12,9 @@ INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_
 
 -- Kyuubi 任务默认参数
 INSERT INTO `task_param_template` (id, task_type, task_name, task_version, params) VALUES (19, 28, 'KYUUBI_SPARK_SQL', null, '## Driver程序使用的CPU核数,默认为1\n# spark.driver.cores=1\n\n## Driver程序使用内存大小,默认1g\n# spark.driver.memory=1g\n\n## 对Spark每个action结果集大小的限制，最少是1M，若设为0则不限制大小。\n## 若Job结果超过限制则会异常退出，若结果集限制过大也可能造成OOM问题，默认1g\n# spark.driver.maxResultSize=1g\n\n## 启动的executor的数量，默认为1\n# spark.executor.instances=1\n\n## 每个executor使用的CPU核数，默认为1\n# spark.executor.cores=1\n\n## 每个executor内存大小,默认1g\n# spark.executor.memory=1g\n\n## spark中所有网络交互的最大超时时间\n# spark.network.timeout=120s\n\n## executor的OffHeap内存，和spark.executor.memory配置使用\n# spark.yarn.executor.memoryOverhead=\n\n## 设置spark sql shuffle分区数，默认200\n# spark.sql.shuffle.partitions=200');
+
+-- 新增 flink116
+INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default) VALUES ('flink_version', '1.16-on-yarn', '116', null, 1,2, 'INTEGER', '', 0);
+INSERT INTO dict (dict_code, dict_name, dict_value, dict_desc, type, sort, data_type, depend_name, is_default) VALUES ('typename_mapping', 'yarn3-hdfs3-flink116', '-115', null, 6, 0, 'LONG', '', 0);
+UPDATE dict SET dict_value = '{"HDFS":{"HDFS":"yarn3-hdfs3-hadoop3","FLINK":[{"112":"yarn3-hdfs3-flink112","116":"yarn3-hdfs3-flink116"}],"SPARK":[{"320":"yarn3-hdfs3-spark320"},{"210":"yarn3-hdfs3-spark210"}],"SCRIPT":"yarn3-hdfs3-script"},"YARN":"yarn3"}'
+    WHERE dict_value = '{"HDFS": {"HDFS": "yarn3-hdfs3-hadoop3", "FLINK": [{"112": "yarn3-hdfs3-flink112"}], "SPARK": [{"320": "yarn3-hdfs3-spark320"}, {"210": "yarn3-hdfs3-spark210"}], "SCRIPT": "yarn3-hdfs3-script"}, "YARN": "yarn3"}';

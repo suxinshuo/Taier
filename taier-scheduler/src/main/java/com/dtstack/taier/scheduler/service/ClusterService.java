@@ -133,8 +133,15 @@ public class ClusterService {
             } else if (componentType.equals(computeComponentType)) {
                 if (deployType.getType().equals(component.getDeployType()) ||
                         EDeployType.YARN.getType().equals(deployType.getType()) && null == component.getDeployType()) {
+                    // 如果没有传版本, 使用第一个配置
+                    if (StringUtils.isEmpty(componentVersion) && config.containsKey(componentType.getConfName())) {
+                        continue;
+                    }
                     JSONObject componentConfig = componentService.getComponentByClusterId(clusterId, componentType.getTypeCode(), false, JSONObject.class, componentVersion, component.getId());
-                    config.put(componentType.getConfName(), componentConfig);
+                    // 兼容多版本, 如果 component 不是对应的版本, 返回是 null
+                    if (Objects.nonNull(componentConfig)) {
+                        config.put(componentType.getConfName(), componentConfig);
+                    }
                 }
             }
             // ignore other compute component
