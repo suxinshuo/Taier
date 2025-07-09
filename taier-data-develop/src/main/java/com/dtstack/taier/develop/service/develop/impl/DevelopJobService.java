@@ -106,7 +106,6 @@ public class DevelopJobService {
             scheduleTaskShade.setExtraInfo(extraInfo);
             scheduleTaskShade.setTaskId(task.getId());
             scheduleTaskShade.setScheduleConf(task.getScheduleConf());
-            // TODO: sxs 看一下创建任务的时候 同步任务为什么没有存 componentVersion
             scheduleTaskShade.setComponentVersion(task.getComponentVersion());
             scheduleTaskShade.setQueueName(task.getQueueName());
             paramTaskAction.setTask(scheduleTaskShade);
