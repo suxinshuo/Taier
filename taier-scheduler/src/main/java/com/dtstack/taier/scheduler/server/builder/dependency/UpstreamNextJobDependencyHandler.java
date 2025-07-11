@@ -96,7 +96,7 @@ public class UpstreamNextJobDependencyHandler extends DecoratorJobDependency {
 
         if (!corn.isMatch(currentDate)) {
             // 该任务不在调度周期内 且上游任务和当前任务不在同一计划时间内，返回空字符串
-            if (beginDate.before(lastDate) || endDate.after(lastDate)) {
+            if (beginDate.after(lastDate) || endDate.before(lastDate)) {
                 return "";
             }
         }

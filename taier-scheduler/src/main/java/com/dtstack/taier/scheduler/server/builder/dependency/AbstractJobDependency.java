@@ -96,7 +96,7 @@ public abstract class AbstractJobDependency implements JobDependency {
      * @return lastJobKey
      */
     protected String needCreateKey(Date lastDate,Date currentDate,String lastJobKey) {
-        if (!DateUtil.isSameDay(lastDate,currentDate)) {
+        if (!DateUtil.isSameDay(lastDate, currentDate)) {
             // 不是同一天
             ScheduleJob scheduleJob = scheduleJobService.lambdaQuery()
                     .select(ScheduleJob::getJobId)
