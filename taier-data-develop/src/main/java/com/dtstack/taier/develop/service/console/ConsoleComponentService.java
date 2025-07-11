@@ -22,11 +22,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.dtstack.taier.common.enums.DictType;
-import com.dtstack.taier.common.enums.DownloadType;
-import com.dtstack.taier.common.enums.EComponentScheduleType;
-import com.dtstack.taier.common.enums.EComponentType;
-import com.dtstack.taier.common.enums.EFrontType;
+import com.dtstack.taier.common.enums.*;
 import com.dtstack.taier.common.env.EnvironmentContext;
 import com.dtstack.taier.common.exception.ErrorCode;
 import com.dtstack.taier.common.exception.TaierDefineException;
@@ -161,14 +157,13 @@ public class ConsoleComponentService {
         componentTypeConfigMapping.put(EComponentType.YARN.getTypeCode(), Lists.newArrayList("yarn-site.xml", "core-site.xml"));
     }
 
-
     @Transactional(rollbackFor = Exception.class)
     public ComponentVO addOrUpdateComponent(Long clusterId, String componentConfig,
                                             List<Resource> resources, String versionName,
                                             String kerberosFileName,
                                             EComponentType componentType, Integer storeType,
-                                            String principals, String principal, Boolean isDefault, Integer deployType) {
-
+                                            String principals, String principal, Boolean isDefault) {
+        Integer deployType = EDeployType.getDeployType(componentType, versionName).getType();
         EComponentType storeComponent = null == storeType ? null : EComponentType.getByCode(storeType);
         PartCluster partCluster = clusterFactory.newImmediatelyLoadCluster(clusterId);
         Part part = partCluster.create(componentType, versionName, storeComponent, deployType);
@@ -222,7 +217,6 @@ public class ConsoleComponentService {
         this.updateCache();
         return ComponentVO.toVO(addComponent);
     }
-
 
     private List<ComponentConfig> buildConfigs(EComponentType componentType, String componentString, String md5Key, String pluginName,
                                                List<ComponentConfig> templateConfig, Long componentId, Long clusterId) {

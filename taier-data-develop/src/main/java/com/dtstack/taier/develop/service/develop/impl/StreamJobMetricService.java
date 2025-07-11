@@ -39,13 +39,13 @@ import com.dtstack.taier.develop.dto.devlop.TimespanVO;
 import com.dtstack.taier.develop.service.schedule.JobService;
 import com.dtstack.taier.develop.utils.TimeUtil;
 import com.dtstack.taier.pluginapi.enums.ComputeType;
+import com.dtstack.taier.scheduler.service.ScheduleDictService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.util.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,18 +53,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @Service
 public class StreamJobMetricService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StreamJobMetricService.class);
-    @Autowired
+
+    @Resource
     private JobService jobService;
 
-    @Autowired
-    private DevelopTaskService taskService;
-    @Autowired
-    private DevelopServerLogService serverLogService;
+    @Resource
+    private DevelopTaskService developTaskService;
 
-    @Autowired
+    @Resource
+    private DevelopServerLogService developServerLogService;
+
+    @Resource
+    private ScheduleDictService scheduleDictService;
+
+    @Resource
     private StreamMetricSupportService streamMetricSupportService;
 
     private static Map<String,List<String>> chartMetricMap = new HashMap<>();
@@ -78,7 +83,7 @@ public class StreamJobMetricService {
     }
 
     public PrometheusMetricQuery buildPrometheusMetric(Long dtUicTenantId, String componentVersion) {
-        Pair<String, String> prometheusHostAndPort = serverLogService.getPrometheusHostAndPort(dtUicTenantId, null, ComputeType.STREAM);
+        Pair<String, String> prometheusHostAndPort = developServerLogService.getPrometheusHostAndPort(dtUicTenantId, null, ComputeType.STREAM, componentVersion);
         if (prometheusHostAndPort == null){
             throw new TaierDefineException("promethues配置为空");
         }
@@ -92,7 +97,7 @@ public class StreamJobMetricService {
      * @return 指标 key 集合
      */
     public List<String> getMetricsByTaskType(Long taskId) {
-        Task streamTask = taskService.getOne(taskId);
+        Task streamTask = developTaskService.getOne(taskId);
         List<String> metric = streamMetricSupportService.getMetricKeyByType(streamTask.getTaskType(), streamTask.getComponentVersion());
         // 公共的 key，数据库暂时只维护一份 1.10 的指标
         List<String> commonMetric = streamMetricSupportService.getMetricKeyByType(99, "1.12");
@@ -110,7 +115,7 @@ public class StreamJobMetricService {
             throw new TaierDefineException("chartName不能为空");
         }
 
-        Task task = taskService.getDevelopTaskById(metricDTO.getTaskId());
+        Task task = developTaskService.getDevelopTaskById(metricDTO.getTaskId());
 
         TimespanVO formatTimespan = formatTimespan(metricDTO.getTimespan());
         if (!formatTimespan.getCorrect()) {
@@ -127,12 +132,14 @@ public class StreamJobMetricService {
         }
         String jobId = scheduleJob.getEngineJobId();
         Long dtuicTenantId = task.getTenantId();
-        PrometheusMetricQuery prometheusMetricQuery = buildPrometheusMetric(dtuicTenantId, task.getComponentVersion());
+        String componentVersion = task.getComponentVersion();
+        String componentVersionValue = scheduleDictService.convertVersionNameToValue(componentVersion, task.getTaskType(), null);
+        PrometheusMetricQuery prometheusMetricQuery = buildPrometheusMetric(dtuicTenantId, componentVersionValue);
         for (String chartName : metricDTO.getChartNames()) {
             if (chartMetricMap.containsKey(chartName)) {
                 List<JSONObject> metricDatas = new ArrayList<>();
                 for (String metricName : chartMetricMap.get(chartName)) {
-                    IMetric metric = StreamMetricBuilder.buildMetric(metricName, startTime, endTime, jobName, jobId, buildGranularity(span), prometheusMetricQuery, task.getComponentVersion());
+                    IMetric metric = StreamMetricBuilder.buildMetric(metricName, startTime, endTime, jobName, jobId, buildGranularity(span), prometheusMetricQuery, componentVersionValue);
                     if (metric != null) {
                         metricDatas.add((JSONObject) metric.getMetric());
                     }
@@ -140,7 +147,7 @@ public class StreamJobMetricService {
 
                 chartDatas.add(StreamMetricBuilder.mergeMetric(metricDatas, chartName, buildGranularity(span)));
             } else {
-                IMetric metric = StreamMetricBuilder.buildMetric(chartName, startTime, endTime, jobName, jobId, buildGranularity(span), prometheusMetricQuery, task.getComponentVersion());
+                IMetric metric = StreamMetricBuilder.buildMetric(chartName, startTime, endTime, jobName, jobId, buildGranularity(span), prometheusMetricQuery, componentVersionValue);
                 if (metric != null) {
                     chartDatas.add(metric.getMetric());
                 }
@@ -189,8 +196,11 @@ public class StreamJobMetricService {
      * @return 指标详细信息
      */
     public List<MetricResultVO> queryTaskMetrics(Long dtUicTenantId, Long taskId, Long end, String timespan, String chartName) {
-        Task streamTask = taskService.getOne(taskId);
-        StreamMetricSupport metric = streamMetricSupportService.getMetricByValue(chartName, streamTask.getComponentVersion());
+        Task streamTask = developTaskService.getOne(taskId);
+        Integer taskType = streamTask.getTaskType();
+        String componentVersion = streamTask.getComponentVersion();
+        String componentVersionValue = scheduleDictService.convertVersionNameToValue(componentVersion, taskType, null);
+        StreamMetricSupport metric = streamMetricSupportService.getMetricByValue(chartName, componentVersionValue);
         EMetricTag metricTag = EMetricTag.getByTagVal(metric.getMetricTag());
         String tagValue;
         if (metricTag.equals(EMetricTag.JOB_ID)) {
@@ -199,7 +209,7 @@ public class StreamJobMetricService {
         } else {
             tagValue = streamTask.getJobId();
         }
-        Pair<String, String> prometheusHostAndPort = serverLogService.getPrometheusHostAndPort(dtUicTenantId, null, ComputeType.STREAM);
+        Pair<String, String> prometheusHostAndPort = developServerLogService.getPrometheusHostAndPort(dtUicTenantId, null, ComputeType.STREAM, componentVersionValue);
         if (prometheusHostAndPort == null){
             throw new TaierDefineException("promethues配置为空");
         }

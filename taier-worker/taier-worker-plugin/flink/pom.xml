@@ -21,10 +21,13 @@
         <module>flink112-standalone</module>
         <module>yarn-hdfs-flink112-core</module>
         <module>yarn-hdfs-flink116-core</module>
+        <module>yarn-hdfs-flink117-core</module>
         <module>yarn2-hdfs2-flink112</module>
         <module>yarn2-hdfs2-flink116</module>
+        <module>yarn2-hdfs2-flink117</module>
         <module>yarn3-hdfs3-flink112</module>
         <module>yarn3-hdfs3-flink116</module>
+        <module>yarn3-hdfs3-flink117</module>
     </modules>
 
     <build>

@@ -19,6 +19,9 @@
 package com.dtstack.taier.common.enums;
 
 import com.dtstack.taier.pluginapi.enums.EDeployMode;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 /**
  * Reason:
@@ -81,4 +84,30 @@ public enum EDeployType {
                 return EDeployType.YARN;
         }
     }
+
+    /**
+     * 根据组件类型和版本名获取部署方式 EDeployType
+     *
+     * @param componentType 组件类型
+     * @param versionName   组件版本名
+     * @return EDeployType
+     */
+    public static EDeployType getDeployType(EComponentType componentType, String versionName) {
+        // 默认 standalone
+        EDeployType deployType = EDeployType.STANDALONE;
+        if (Objects.equals(componentType, EComponentType.SCRIPT)) {
+            deployType = EDeployType.YARN;
+            if (StringUtils.equals(EDeployType.STANDALONE.getName(), versionName)) {
+                deployType = EDeployType.STANDALONE;
+            }
+        }
+        if (StringUtils.contains(versionName, EDeployType.STANDALONE.getName())) {
+            deployType = EDeployType.STANDALONE;
+        }
+        if (StringUtils.contains(versionName, EDeployType.YARN.getName())) {
+            deployType = EDeployType.YARN;
+        }
+        return deployType;
+    }
+
 }

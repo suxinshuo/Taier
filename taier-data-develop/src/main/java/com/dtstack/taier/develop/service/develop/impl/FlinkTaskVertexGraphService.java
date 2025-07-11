@@ -34,6 +34,7 @@ import com.dtstack.taier.develop.dto.devlop.SubJobVerticeDTO;
 import com.dtstack.taier.develop.dto.devlop.TaskVerticesDTO;
 import com.dtstack.taier.develop.enums.develop.DAGShownType;
 import com.dtstack.taier.develop.utils.develop.common.UnitUtil;
+import com.dtstack.taier.scheduler.service.ScheduleDictService;
 import com.dtstack.taier.scheduler.service.ScheduleJobExpandService;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,6 +77,9 @@ public class FlinkTaskVertexGraphService {
     @Autowired
     private ScheduleJobExpandService scheduleJobExpandService;
 
+    @Resource
+    private ScheduleDictService scheduleDictService;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FlinkTaskVertexGraphService.class);
 
 
@@ -97,7 +102,9 @@ public class FlinkTaskVertexGraphService {
         }
         FlinkTaskDTO flinkTask = JSONObject.parseObject(dagJson, FlinkTaskDTO.class);
         sortJobGraph(flinkTask);
-        PrometheusMetricQuery prometheusMetricQuery = streamJobMetricService.buildPrometheusMetric(task.getTenantId(), task.getComponentVersion());
+        String componentVersion = task.getComponentVersion();
+        String componentVersionValue = scheduleDictService.convertVersionNameToValue(componentVersion, task.getTaskType(), null);
+        PrometheusMetricQuery prometheusMetricQuery = streamJobMetricService.buildPrometheusMetric(task.getTenantId(), componentVersionValue);
         DAGPrometheusMetricQuery dagPrometheusMetricQuery = new DAGPrometheusMetricQuery(prometheusMetricQuery);
         //利用dag执行查询操作
         setMetricForJson(dagPrometheusMetricQuery, flinkTask);
