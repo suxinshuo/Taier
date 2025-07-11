@@ -80,7 +80,7 @@ public class DependencyManager {
         }
 
         // 上游任务的依赖处理器
-        JobDependency jobDependency = new UpstreamDependencyHandler(keyPreStr, currentTaskShade,scheduleJobService,taskShadeList);
+        JobDependency jobDependency = new UpstreamDependencyHandler(keyPreStr, currentTaskShade, scheduleJobService, taskShadeList);
 
         // 判断是否设置自依赖
         ScheduleConf scheduleConf = corn.getScheduleConf();

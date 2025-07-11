@@ -106,7 +106,7 @@ public class FillDataRunnable implements Runnable {
             }
 
             // 生成补数据实例
-            fillDataJobBuilder.createFillJob(all, run,fillId,fillName,beginTime,endTime,startDay,endDay);
+            fillDataJobBuilder.createFillJob(all, run, fillId, fillName, beginTime, endTime, startDay, endDay);
 
         } catch (Throwable e) {
             LOGGER.error("fillId:{} create exception:",fillId,e);
