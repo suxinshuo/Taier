@@ -27,6 +27,7 @@ import com.dtstack.taier.scheduler.utils.ComponentConfigUtils;
 import com.dtstack.taier.scheduler.utils.LocalCacheUtil;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author yuebai
@@ -124,10 +122,19 @@ public class ComponentConfigService {
     }
 
     public Map<String, Object> innerGetCacheComponentConfigMap(Long clusterId, Integer componentType, boolean isFilter, String componentVersion, Long componentId) {
-        if (null != componentId) {
-            return convertComponentConfigToMap(componentId, isFilter);
+        if (Objects.nonNull(componentId)) {
+            // 如果 componentVersion 是空, 直接返回
+            if (StringUtils.isEmpty(componentVersion)) {
+                return convertComponentConfigToMap(componentId, isFilter);
+            }
+            // 先判断当前参数 componentId 是否为对应的的版本 componentVersion
+            Component component = componentMapper.selectById(componentId);
+            if (Objects.nonNull(component) && StringUtils.equals(component.getVersionValue(), componentVersion)) {
+                return convertComponentConfigToMap(componentId, isFilter);
+            }
+            return null;
         }
-        Component component = componentMapper.getByClusterIdAndComponentType(clusterId, componentType, componentVersion,null);
+        Component component = componentMapper.getByClusterIdAndComponentType(clusterId, componentType, componentVersion, null);
         if (null == component) {
             return null;
         }

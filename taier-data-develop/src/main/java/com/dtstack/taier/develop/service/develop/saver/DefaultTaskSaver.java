@@ -24,16 +24,15 @@ import com.dtstack.taier.common.exception.ErrorCode;
 import com.dtstack.taier.common.exception.TaierDefineException;
 import com.dtstack.taier.dao.domain.TaskParamTemplate;
 import com.dtstack.taier.develop.dto.devlop.TaskResourceParam;
-import com.dtstack.taier.develop.dto.devlop.TaskVO;
-import com.dtstack.taier.develop.service.develop.impl.DevelopTaskTaskService;
 import com.dtstack.taier.develop.service.user.UserService;
 import com.dtstack.taier.pluginapi.enums.ComputeType;
 import com.dtstack.taier.pluginapi.enums.EJobType;
+import com.dtstack.taier.scheduler.service.ScheduleDictService;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -49,28 +48,26 @@ import java.util.Objects;
 @Service
 public class DefaultTaskSaver extends AbstractTaskSaver {
 
-    @Autowired
+    @Resource
     private UserService userService;
 
+    @Resource
+    private ScheduleDictService scheduleDictService;
 
     @Override
     public TaskResourceParam beforeProcessing(TaskResourceParam taskResourceParam) {
         // sql 任务必须选择数据源
         EScheduleJobType scheduleJobType = EScheduleJobType.getByTaskType(taskResourceParam.getTaskType());
 
-        // 2023-11-21 Modified by  ddwolf715
-        // 修改前代码如下，修改原因：关系型数据库在 task_param_template 中没有相关参数，所以查询不到任务数据，直接 getParams() 报空值错误
-        // taskResourceParam.setTaskParams(taskResourceParam.getTaskParams() == null ? taskTemplateService.getTaskTemplate(taskResourceParam.getTaskType(), taskResourceParam.getComponentVersion()).getParams() : taskResourceParam.getTaskParams());
-        // 修改后代码：从task_param_template查询数据后，判断是否不为空，再进行 setTaskParams
-        if(taskResourceParam.getTaskParams() != null){
+        if (taskResourceParam.getTaskParams() != null) {
             taskResourceParam.setTaskParams(taskResourceParam.getTaskParams());
-        }else{
-            TaskParamTemplate taskParamTemplate = taskTemplateService.getTaskTemplate(taskResourceParam.getTaskType(), taskResourceParam.getComponentVersion());
-            if(taskParamTemplate != null){
+        } else {
+            String versionNameToValue = scheduleDictService.convertVersionNameToValue(taskResourceParam.getComponentVersion(), taskResourceParam.getTaskType(), null);
+            TaskParamTemplate taskParamTemplate = taskTemplateService.getTaskTemplate(taskResourceParam.getTaskType(), versionNameToValue);
+            if (taskParamTemplate != null) {
                 taskResourceParam.setTaskParams(taskParamTemplate.getParams());
             }
         }
-        // 2023-11-21 Modified by  ddwolf715
 
         taskResourceParam.setComputeType(ComputeType.BATCH.getType());
         if (EComputeType.BATCH.getType() == scheduleJobType.getComputeType().getType() && EJobType.SQL.getType() == scheduleJobType.getEngineJobType()) {

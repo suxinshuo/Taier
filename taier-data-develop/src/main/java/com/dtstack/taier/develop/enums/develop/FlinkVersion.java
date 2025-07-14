@@ -18,6 +18,8 @@
 
 package com.dtstack.taier.develop.enums.develop;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 组建版本
  *
@@ -27,7 +29,8 @@ package com.dtstack.taier.develop.enums.develop;
  */
 public enum FlinkVersion {
 
-    FLINK_112("1.12", "112");
+    FLINK_112("1.12", "112"),
+    FLINK_116("1.16", "116");
 
     private final String type;
 
@@ -41,4 +44,17 @@ public enum FlinkVersion {
         this.type = type;
         this.version = version;
     }
+
+    public static FlinkVersion getByVersion(String version) {
+        if (StringUtils.isBlank(version)) {
+            return null;
+        }
+        for (FlinkVersion flinkVersion : FlinkVersion.values()) {
+            if (flinkVersion.getVersion().equals(version)) {
+                return flinkVersion;
+            }
+        }
+        return null;
+    }
+
 }
