@@ -416,7 +416,7 @@ export default function ClusterDetail() {
                 principals,
                 versionName: Array.isArray(versionName) ? versionName[versionName.length - 1] : versionName,
                 componentConfig,
-                deployType: currentComponent.deployType,
+                // deployType: currentComponent.deployType, // 在后端根据 versionName 自动计算
                 clusterId: currentComponent.clusterId,
                 componentCode: currentComponent.componentTypeCode,
                 kerberosFileName: kerberosFileName ?? '',

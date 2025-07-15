@@ -57,7 +57,7 @@ public abstract class StreamBaseMetric implements IMetric {
 
     private static Map<String, String> metricNameMap = new HashMap<>();
 
-    private final static Map<String, String> FLINK_112_METRIC_NAME_MAP = new HashMap<>();
+    private final static Map<String, String> FLINK_CHUNJUN_METRIC_NAME_MAP = new HashMap<>();
 
     private static List<String> specialDealmetricName = new ArrayList<>();
 
@@ -87,12 +87,12 @@ public abstract class StreamBaseMetric implements IMetric {
         metricNameMap.put("nullErrors", "flink_taskmanager_job_task_operator_chunjun_nullErrors");
         metricNameMap.put("otherErrors", "flink_taskmanager_job_task_operator_chunjun_otherErrors");
         // 添加原有所有参数
-        FLINK_112_METRIC_NAME_MAP.putAll(metricNameMap);
-        // 添加 flink1.12 改动参数
-        FLINK_112_METRIC_NAME_MAP.put("source_input_tps", "flink_taskmanager_job_task_operator_chunjun_numReadPerSecond");
-        FLINK_112_METRIC_NAME_MAP.put("source_input_rps", "flink_taskmanager_job_task_operator_chunjun_numReadPerSecond");
-        FLINK_112_METRIC_NAME_MAP.put("sink_output_rps", "flink_taskmanager_job_task_operator_chunjun_numWritePerSecond");
-        FLINK_112_METRIC_NAME_MAP.put("source_input_bps", "flink_taskmanager_job_task_operator_chunjun_byteReadPerSecond");
+        FLINK_CHUNJUN_METRIC_NAME_MAP.putAll(metricNameMap);
+        // 添加 chunjun 改动参数
+        FLINK_CHUNJUN_METRIC_NAME_MAP.put("source_input_tps", "flink_taskmanager_job_task_operator_chunjun_numReadPerSecond");
+        FLINK_CHUNJUN_METRIC_NAME_MAP.put("source_input_rps", "flink_taskmanager_job_task_operator_chunjun_numReadPerSecond");
+        FLINK_CHUNJUN_METRIC_NAME_MAP.put("sink_output_rps", "flink_taskmanager_job_task_operator_chunjun_numWritePerSecond");
+        FLINK_CHUNJUN_METRIC_NAME_MAP.put("source_input_bps", "flink_taskmanager_job_task_operator_chunjun_byteReadPerSecond");
 
         specialDealmetricName.add("source_input_tps");
         specialDealmetricName.add("sink_output_rps");
@@ -113,8 +113,7 @@ public abstract class StreamBaseMetric implements IMetric {
     @Override
     public Object getMetric() {
         QueryInfo queryInfo = buildQueryInfo();
-        // 区分 flink 版本
-        String originMetricName = FLINK_112_METRIC_NAME_MAP.get(metricName);
+        String originMetricName = FLINK_CHUNJUN_METRIC_NAME_MAP.get(metricName);
 
         // 返回空数据
         if (originMetricName == null || queryInfo == null) {

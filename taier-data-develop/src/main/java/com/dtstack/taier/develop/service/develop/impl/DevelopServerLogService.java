@@ -55,6 +55,7 @@ import com.dtstack.taier.pluginapi.enums.EDeployMode;
 import com.dtstack.taier.pluginapi.enums.TaskStatus;
 import com.dtstack.taier.scheduler.service.ClusterService;
 import com.dtstack.taier.scheduler.service.ScheduleActionService;
+import com.dtstack.taier.scheduler.service.ScheduleDictService;
 import com.dtstack.taier.scheduler.service.ScheduleJobService;
 import com.dtstack.taier.scheduler.vo.action.ActionJobEntityVO;
 import com.dtstack.taier.scheduler.vo.action.ActionLogVO;
@@ -108,6 +109,9 @@ public class DevelopServerLogService {
 
     @Autowired
     private TaskConfiguration taskConfiguration;
+
+    @Resource
+    private ScheduleDictService scheduleDictService;
 
     @Autowired
     private EnvironmentContext environmentContext;
@@ -605,7 +609,6 @@ public class DevelopServerLogService {
 
 
     public String formatPerfLogInfo(final String engineJobId, final String jobId, final long startTime, final long endTime, final Long tenantId) {
-
         final ScheduleJob job = scheduleJobService.getByJobId(jobId);
         if (Objects.isNull(job)) {
             LOGGER.info("can not find job by id:{}.", jobId);
@@ -614,20 +617,22 @@ public class DevelopServerLogService {
         if (job.getTaskId() == null || job.getTaskId() == -1){
             throw new TaierDefineException(ErrorCode.CAN_NOT_FIND_TASK);
         }
-        Task developTaskById = developTaskService.getDevelopTaskById(job.getTaskId());
-        //prometheus的配置信息 从控制台获取
-        final Pair<String, String> prometheusHostAndPort = this.getPrometheusHostAndPort(tenantId,developTaskById.getTaskParams(),ComputeType.BATCH);
+        Task developTask = developTaskService.getDevelopTaskById(job.getTaskId());
+        // prometheus的配置信息 从控制台获取
+        String componentVersion = developTask.getComponentVersion();
+        String componentVersionValue = scheduleDictService.convertVersionNameToValue(componentVersion, developTask.getTaskType(), null);
+        final Pair<String, String> prometheusHostAndPort = this.getPrometheusHostAndPort(tenantId, developTask.getTaskParams(), ComputeType.BATCH, componentVersionValue);
         if (prometheusHostAndPort == null){
             return "";
         }
         final PrometheusMetricQuery prometheusMetricQuery = new PrometheusMetricQuery(String.format("%s:%s", prometheusHostAndPort.getKey(), prometheusHostAndPort.getValue()));
 
-        //之后查询是可以直接获取最后一条记录的方法
-        //防止数据同步执行时间太长 查询prometheus的时候返回exceeded maximum resolution of 11,000 points per timeseries
+        // 之后查询是可以直接获取最后一条记录的方法
+        // 防止数据同步执行时间太长 查询prometheus的时候返回exceeded maximum resolution of 11,000 points per timeseries
         final long maxGapTime = 60 * 1000 * 60 * (long)8;
         long gapStartTime = startTime;
         if (endTime - startTime >= maxGapTime) {
-            //超过11,000 points 查询1小时间隔内
+            // 超过11,000 points 查询1小时间隔内
             gapStartTime = endTime - 60 * 1000 * 60;
         }
 
@@ -642,15 +647,15 @@ public class DevelopServerLogService {
         return formatPerfLogInfo.buildReadableLog();
     }
 
-    public Pair<String, String> getPrometheusHostAndPort(final Long tenantId, final String taskParams, ComputeType computeType) {
+    public Pair<String, String> getPrometheusHostAndPort(final Long tenantId, final String taskParams, ComputeType computeType, String componentVersion) {
         boolean onlyStandalone = clusterService.onlyStandaloneType(tenantId, EComponentType.FLINK);
         JSONObject flinkJsonObject;
         if (onlyStandalone) {
-            flinkJsonObject = clusterService.getConfigByKey(tenantId, EComponentType.FLINK.getConfName(), null, EDeployType.STANDALONE);
+            flinkJsonObject = clusterService.getConfigByKey(tenantId, EComponentType.FLINK.getConfName(), componentVersion, EDeployType.STANDALONE);
         } else {
             EDeployMode deployMode = TaskParamsUtils.parseDeployTypeByTaskParams(taskParams, computeType.getType());
             EDeployType deployType = EDeployType.convertToDeployType(deployMode.getType());
-            JSONObject jsonObject = clusterService.getConfigByKey(tenantId, EComponentType.FLINK.getConfName(), null, deployType);
+            JSONObject jsonObject = clusterService.getConfigByKey(tenantId, EComponentType.FLINK.getConfName(), componentVersion, deployType);
             if (null == jsonObject) {
                 LOGGER.info("console tenantId {} pluginInfo is null", tenantId);
                 return null;

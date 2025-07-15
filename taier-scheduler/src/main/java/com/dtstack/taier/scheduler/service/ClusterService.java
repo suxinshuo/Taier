@@ -189,7 +189,7 @@ public class ClusterService {
     }
 
     public JSONObject getConfigByKeyByClusterId(Long clusterId, String componentConfName, String componentVersion, EDeployType deployType) {
-        //根据组件区分kerberos
+        // 根据组件区分kerberos
         EComponentType componentType = EComponentType.getByConfName(componentConfName);
         Component component = componentMapper.getByClusterIdAndComponentType(clusterId, componentType.getTypeCode(), componentVersion, null == deployType ? null : deployType.getType());
         if (null == component) {

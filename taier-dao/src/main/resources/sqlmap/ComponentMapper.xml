@@ -67,7 +67,7 @@
             </otherwise>
         </choose>
         <if test="deployType!= null">
-            and c.deploy_type = #{deployType}
+            and (c.deploy_type is null or c.deploy_type = #{deployType})
         </if>
         and c.is_deleted = 0 LIMIT 1
     </select>
