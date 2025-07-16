@@ -16,23 +16,23 @@
  * limitations under the License.
  */
 
-package com.dtstack.taier.scheduler.enums;
+package com.dtstack.taier.common.alert;
 
+import com.dtstack.taier.common.alert.entity.SendAlertEntity;
 
-public enum EJobLogType {
-    //
-    FINISH_LOG(0),
-    //
-    RETRY_LOG(1);
+/**
+ * 报警
+ *
+ * @author suxinshuo
+ * @date 2025/7/16 16:59
+ */
+public abstract class AlertClient {
 
-    Integer type;
-
-    public Integer getType() {
-        return type;
-    }
-
-    EJobLogType(Integer type) {
-        this.type = type;
-    }
+    /**
+     * 发送任务失败报警
+     *
+     * @param sendAlertEntity 报警信息
+     */
+    public abstract void sendJobFailed(SendAlertEntity sendAlertEntity);
 
 }

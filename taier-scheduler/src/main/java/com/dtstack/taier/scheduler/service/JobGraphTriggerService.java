@@ -42,7 +42,6 @@ public class JobGraphTriggerService extends ServiceImpl<JobGraphTriggerMapper, J
      */
     public boolean checkHasBuildJobGraph(Timestamp triggerTime) {
         return this.baseMapper.getByTriggerTimeAndTriggerType(triggerTime, EScheduleType.NORMAL_SCHEDULE.getType()) != null;
-
     }
 
     /**

@@ -33,22 +33,23 @@ import com.google.common.collect.Sets;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @Auther: dazhi
- * @Date: 2022/1/5 3:52 PM
- * @Email:dazhi@dtstack.com
- * @Description:
+ * 构造周期实例
+ *
+ * @author suxinshuo
+ * @date 2025-07-16 10:57:00
  */
 @Component
 public class CycleJobBuilder extends AbstractJobBuilder {
@@ -57,11 +58,12 @@ public class CycleJobBuilder extends AbstractJobBuilder {
 
     private static final String CRON_JOB_NAME = "cronJob";
 
-    @Autowired
+    @Resource
     protected JobGraphTriggerService jobGraphTriggerService;
 
     private final Lock lock = new ReentrantLock();
 
+    @Transactional(rollbackFor = Exception.class)
     public void buildTaskJobGraph(String triggerDay) {
         if (!environmentContext.isOpenJobSchedule()) {
             return;
@@ -72,6 +74,7 @@ public class CycleJobBuilder extends AbstractJobBuilder {
             String triggerTimeStr = triggerDay + " 00:00:00";
             Timestamp triggerTime = Timestamp.valueOf(triggerTimeStr);
 
+            // 检测今天是否已经生成过周期实例, 一天值生成一次周期实例
             boolean hasBuild = jobGraphTriggerService.checkHasBuildJobGraph(triggerTime);
 
             if (hasBuild) {
@@ -100,6 +103,7 @@ public class CycleJobBuilder extends AbstractJobBuilder {
 
             // 3. 查询db多线程生成周期实例
             Long startId = 0L;
+            AtomicBoolean buildFailed = new AtomicBoolean(false);
             for (int i = 0; i < totalBatch; i++) {
                 // 默认取50个任务
                 final List<ScheduleTaskShade> batchTaskShades = scheduleTaskService.listRunnableTask(startId,
@@ -120,29 +124,35 @@ public class CycleJobBuilder extends AbstractJobBuilder {
                     jobGraphBuildPool.submit(() -> {
                         try {
                             for (ScheduleTaskShade batchTaskShade : batchTaskShades) {
-                                try {
-                                    List<ScheduleJobDetails> scheduleJobDetails = RetryUtil.executeWithRetry(() -> buildJob(batchTaskShade, triggerDay, sortWorker),
-                                            environmentContext.getBuildJobErrorRetry(), 200, false);
-                                    // 插入周期实例
-                                    savaJobList(scheduleJobDetails);
-                                } catch (Throwable e) {
-                                    LOGGER.error("build task failure taskId:{}", batchTaskShade.getTaskId(), e);
-                                }
+                                List<ScheduleJobDetails> scheduleJobDetails = RetryUtil.executeWithRetry(() -> buildJob(batchTaskShade, triggerDay, sortWorker),
+                                        environmentContext.getBuildJobErrorRetry(), 200, false);
+                                // 插入周期实例
+                                savaJobList(scheduleJobDetails);
                             }
                         } catch (Throwable e) {
-                            LOGGER.error("!!! buildTaskJobGraph  build job error !!!", e);
+                            LOGGER.error("!!! buildTaskJobGraph build job error !!!", e);
+                            buildFailed.compareAndSet(false, true);
                         } finally {
                             sph.release();
                             ctl.countDown();
                         }
                     });
+
+                    // 如果有构建实例失败, 直接跳出去
+                    if (buildFailed.get()) {
+                        break;
+                    }
                 } catch (Throwable e) {
                     LOGGER.error("[acquire pool error]:", e);
                     throw new TaierDefineException(e);
                 }
             }
             ctl.await();
-
+            // 整个构建失败, 不保存 JobGraph
+            if (buildFailed.get()) {
+                LOGGER.error("!!! buildTaskJobGraph Failed ！！！");
+                return;
+            }
             // 循环已经结束，说明周期实例已经全部生成了
             saveJobGraph(triggerDay);
         } catch (Exception e) {
@@ -183,10 +193,9 @@ public class CycleJobBuilder extends AbstractJobBuilder {
     /**
      * 保存生成的jobGraph记录
      */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean saveJobGraph(String triggerDay) {
+    private void saveJobGraph(String triggerDay) {
         LOGGER.info("start saveJobGraph to db {}", triggerDay);
-        //记录当天job已经生成
+        // 记录当天job已经生成
         String triggerTimeStr = triggerDay + " 00:00:00";
         Timestamp timestamp = Timestamp.valueOf(triggerTimeStr);
         try {
@@ -198,7 +207,6 @@ public class CycleJobBuilder extends AbstractJobBuilder {
             LOGGER.error("addJobTrigger triggerTimeStr {} error ", triggerTimeStr, e);
             throw new TaierDefineException(e);
         }
-        return true;
     }
 
     private Integer getTotalTask() {

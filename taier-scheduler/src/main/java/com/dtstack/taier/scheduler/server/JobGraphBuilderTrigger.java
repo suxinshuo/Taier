@@ -102,7 +102,7 @@ public class JobGraphBuilderTrigger implements Runnable {
         SimpleDateFormat dayFormat = new SimpleDateFormat("yy-MM-dd");
         Date triggerDate = dateFormat.parse(dayFormat.format(new Date()) + " " + time);
         if (triggerDate.after(new Date())) {
-            //校验当天运行的
+            // 校验当天运行的
             return new DateTime().toString("yyyy-MM-dd");
         }
         return new DateTime().plusDays(1).toString("yyyy-MM-dd");

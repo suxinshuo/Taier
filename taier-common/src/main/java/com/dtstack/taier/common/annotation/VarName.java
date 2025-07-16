@@ -16,23 +16,21 @@
  * limitations under the License.
  */
 
-package com.dtstack.taier.scheduler.enums;
+package com.dtstack.taier.common.annotation;
 
+import java.lang.annotation.*;
 
-public enum EJobLogType {
-    //
-    FINISH_LOG(0),
-    //
-    RETRY_LOG(1);
+/**
+ * VarName.
+ *
+ * @author suxinshuo
+ * @date 2024/8/6 10:22
+ */
+@Documented
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface VarName {
 
-    Integer type;
-
-    public Integer getType() {
-        return type;
-    }
-
-    EJobLogType(Integer type) {
-        this.type = type;
-    }
+    String value() default "";
 
 }

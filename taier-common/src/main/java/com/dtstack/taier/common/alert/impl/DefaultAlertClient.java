@@ -16,23 +16,31 @@
  * limitations under the License.
  */
 
-package com.dtstack.taier.scheduler.enums;
+package com.dtstack.taier.common.alert.impl;
 
+import com.dtstack.taier.common.alert.AlertClient;
+import com.dtstack.taier.common.alert.entity.SendAlertEntity;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
-public enum EJobLogType {
-    //
-    FINISH_LOG(0),
-    //
-    RETRY_LOG(1);
+/**
+ * 默认的实现
+ *
+ * @author suxinshuo
+ * @date 2025/7/16 17:13
+ */
+@Component
+@ConditionalOnMissingBean(AlertClient.class)
+public class DefaultAlertClient extends AlertClient {
 
-    Integer type;
-
-    public Integer getType() {
-        return type;
-    }
-
-    EJobLogType(Integer type) {
-        this.type = type;
+    /**
+     * 发送任务失败报警
+     *
+     * @param sendAlertEntity 报警信息
+     */
+    @Override
+    public void sendJobFailed(SendAlertEntity sendAlertEntity) {
+        // do nothing
     }
 
 }

@@ -16,23 +16,30 @@
  * limitations under the License.
  */
 
-package com.dtstack.taier.scheduler.enums;
+package com.dtstack.taier.common.alert.entity;
 
+import com.dtstack.taier.common.annotation.VarName;
+import lombok.Data;
 
-public enum EJobLogType {
-    //
-    FINISH_LOG(0),
-    //
-    RETRY_LOG(1);
+/**
+ * 发送告警信息
+ *
+ * @author suxinshuo
+ * @date 2025/7/16 17:08
+ */
+@Data
+public class SendAlertEntity {
 
-    Integer type;
+    @VarName("{{TASK_ID}}")
+    private Integer taskId;
 
-    public Integer getType() {
-        return type;
-    }
+    @VarName("{{TASK_NAME}}")
+    private String taskName;
 
-    EJobLogType(Integer type) {
-        this.type = type;
-    }
+    @VarName("{{JOB_KEY}}")
+    private String scheduleJobKey;
+
+    @VarName("{{JOB_NAME}}")
+    private String scheduleJobName;
 
 }

@@ -51,7 +51,7 @@ public class ScheduleTaskShadeService extends ServiceImpl<ScheduleTaskShadeMappe
         if (startId < 0) {
             startId = 0L;
         }
-        return this.baseMapper.listRunnableTask(startId,scheduleStatusList,taskSize);
+        return this.baseMapper.listRunnableTask(startId, scheduleStatusList, taskSize);
     }
 
 

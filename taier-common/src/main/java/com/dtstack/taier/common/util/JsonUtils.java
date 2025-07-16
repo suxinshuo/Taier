@@ -21,6 +21,8 @@ package com.dtstack.taier.common.util;
 import com.alibaba.fastjson.JSONObject;
 import com.dtstack.taier.common.exception.ErrorCode;
 import com.dtstack.taier.common.exception.TaierDefineException;
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
@@ -60,7 +62,7 @@ public class JsonUtils {
         try {
             formatJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readValue(json, Object.class));
         } catch (Exception e) {
-            LOG.warn("JOSN解析失败:{}",json, e);
+            LOG.warn("JSON 解析失败:{}", json, e);
             return json;
         }
         return formatJson;
@@ -86,4 +88,23 @@ public class JsonUtils {
     public static Map<String, Object> objectToMap(Object obj) {
         return JSONObject.parseObject(JSONObject.toJSONString(obj));
     }
+
+    /**
+     * 转化为 JSON 对象
+     *
+     * @param content json string
+     * @return JsonNode
+     */
+    public static JsonNode parseJSON(String content) {
+        if (StringUtils.isBlank(content)) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(content);
+        } catch (Exception e) {
+            LOG.warn("JSON 解析失败: {}", content, e);
+            return null;
+        }
+    }
+
 }

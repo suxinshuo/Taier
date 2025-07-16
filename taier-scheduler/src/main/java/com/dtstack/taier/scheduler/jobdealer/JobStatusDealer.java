@@ -157,7 +157,6 @@ public class JobStatusDealer implements Runnable {
         }
     }
 
-
     private void dealJob(String jobId) throws Exception {
         ScheduleJob scheduleJob = scheduleJobService.getByJobId(jobId);
         ScheduleJobCache engineJobCache = scheduleJobCacheService.getJobCacheByJobId(jobId);
@@ -194,7 +193,7 @@ public class JobStatusDealer implements Runnable {
 
             TaskStatus taskStatus;
             EJobClientType jobClientType = EJobClientType.getJobClientTypeByTask(taskType);
-            if(EJobClientType.DATASOURCE_PLUGIN == jobClientType){
+            if (EJobClientType.DATASOURCE_PLUGIN == jobClientType) {
                 taskStatus = TaskStatus.FAILED;
             } else {
                 taskStatus = workerOperator.getJobStatus(jobIdentifier);
@@ -205,7 +204,6 @@ public class JobStatusDealer implements Runnable {
             }
 
             if (taskStatus != null) {
-
                 taskStatus = checkNotFoundStatus(taskStatus, jobId);
                 Integer status = taskStatus.getStatus();
                 // 重试状态 先不更新状态
@@ -221,18 +219,13 @@ public class JobStatusDealer implements Runnable {
                 shardCache.updateLocalMemTaskStatus(jobId, status);
                 updateJobStatusWithPredicate(scheduleJob, jobId, status);
 
-                //数据的更新顺序，先更新job_cache，再更新engine_batch_job
+                // 数据的更新顺序, 先更新 job_cache, 再更新 engine_batch_job
                 if (TaskStatus.getStoppedStatus().contains(status)) {
                     jobLogDelayDealer(jobId, jobIdentifier, engineJobCache.getComputeType(),scheduleJob.getType());
                     jobStatusFrequency.remove(jobId);
                     scheduleJobCacheService.deleteByJobId(jobId);
                     updateHistoryEndTime(jobId,appId);
                     LOGGER.info("------ jobId:{} is stop status {} delete jobCache", jobId, status);
-                }
-
-
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("------ jobId:{} after dealJob status:{}", jobId, taskStatus);
                 }
             }
         }
@@ -250,13 +243,13 @@ public class JobStatusDealer implements Runnable {
     }
 
     private void updateJobStatusWithPredicate(ScheduleJob scheduleJob, String jobId, Integer status) {
-        //流计算只有在状态变更(且任务没有被手动停止 进入CANCELLING)的时候才去更新schedule_job表
+        // 流计算只有在状态变更(且任务没有被手动停止 进入CANCELLING)的时候才去更新schedule_job表
         Predicate<ScheduleJob> isStreamUpdateConditions = job ->
                 ComputeType.STREAM.getType().equals(job.getComputeType())
                         && !job.getStatus().equals(status)
                         && !TaskStatus.CANCELLING.getStatus().equals(job.getStatus());
 
-        //流计算 任务被手动停止 进入CANCELLING 除非YARN上状态已结束 才回写, 引擎返回的最终状态需要回写到数据库
+        // 流计算 任务被手动停止 进入CANCELLING 除非YARN上状态已结束 才回写, 引擎返回的最终状态需要回写到数据库
         Predicate<ScheduleJob> isStreamCancellingConditions = job ->
                 ComputeType.STREAM.getType().equals(job.getComputeType())
                         && TaskStatus.CANCELLING.getStatus().equals(job.getStatus())
@@ -286,7 +279,7 @@ public class JobStatusDealer implements Runnable {
 
 
     private void jobLogDelayDealer(String jobId, JobIdentifier jobIdentifier, int computeType, Integer type) {
-        //临时运行的任务立马去获取日志
+        // 临时运行的任务立马去获取日志
         JobLogInfo jobLogInfo = new JobLogInfo(jobId, jobIdentifier, computeType, EScheduleType.TEMP_JOB.getType().equals(type) ?
                 0 : environmentContext.getJobLogDelay(), EJobLogType.FINISH_LOG);
         jobLogDealer.addJobInfo(jobLogInfo);

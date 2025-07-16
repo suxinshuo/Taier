@@ -69,4 +69,13 @@ public class FileUtil {
         }
         return filename.substring(lastIndexOf + 1);
     }
+
+    public static String readContent(String filepath) {
+        try {
+            return FileUtils.readFileToString(new File(filepath));
+        } catch (IOException e) {
+            throw new TaierDefineException("read file failed, filepath: " + filepath, e);
+        }
+    }
+
 }
