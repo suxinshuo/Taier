@@ -20,8 +20,8 @@ package com.dtstack.taier.common.alert.impl;
 
 import com.dtstack.taier.common.alert.AlertClient;
 import com.dtstack.taier.common.alert.entity.SendAlertEntity;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 默认的实现
@@ -29,9 +29,9 @@ import org.springframework.stereotype.Component;
  * @author suxinshuo
  * @date 2025/7/16 17:13
  */
-@Component
-@ConditionalOnMissingBean(AlertClient.class)
 public class DefaultAlertClient extends AlertClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAlertClient.class);
 
     /**
      * 发送任务失败报警
@@ -40,7 +40,7 @@ public class DefaultAlertClient extends AlertClient {
      */
     @Override
     public void sendJobFailed(SendAlertEntity sendAlertEntity) {
-        // do nothing
+        LOGGER.info("Send job failed alert. sendAlertEntity: {}", sendAlertEntity);
     }
 
 }

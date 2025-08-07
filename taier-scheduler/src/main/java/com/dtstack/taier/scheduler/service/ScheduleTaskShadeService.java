@@ -66,4 +66,11 @@ public class ScheduleTaskShadeService extends ServiceImpl<ScheduleTaskShadeMappe
                 .eq(ScheduleTaskShade::getFlowId, taskId)
                 .eq(ScheduleTaskShade::getIsDeleted, Deleted.NORMAL.getStatus()));
     }
+
+    public List<ScheduleTaskShade> listByTaskId(Long taskId) {
+        return this.baseMapper.selectList(Wrappers.lambdaQuery(ScheduleTaskShade.class)
+                .eq(ScheduleTaskShade::getTaskId, taskId)
+                .eq(ScheduleTaskShade::getIsDeleted, Deleted.NORMAL.getStatus()));
+    }
+
 }

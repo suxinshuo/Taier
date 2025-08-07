@@ -19,9 +19,13 @@
 package com.dtstack.taier.scheduler.jobdealer;
 
 import com.alibaba.fastjson.JSONObject;
+import com.dtstack.taier.common.alert.AlertClient;
+import com.dtstack.taier.common.alert.entity.SendAlertEntity;
 import com.dtstack.taier.common.enums.EJobCacheStage;
 import com.dtstack.taier.common.util.JobGraphUtil;
+import com.dtstack.taier.dao.domain.ScheduleJob;
 import com.dtstack.taier.dao.domain.ScheduleJobHistory;
+import com.dtstack.taier.dao.domain.ScheduleTaskShade;
 import com.dtstack.taier.dao.mapper.ScheduleJobHistoryMapper;
 import com.dtstack.taier.pluginapi.JobClient;
 import com.dtstack.taier.pluginapi.constrant.JobResultConstant;
@@ -31,13 +35,18 @@ import com.dtstack.taier.scheduler.jobdealer.cache.ShardCache;
 import com.dtstack.taier.scheduler.service.ScheduleJobCacheService;
 import com.dtstack.taier.scheduler.service.ScheduleJobExpandService;
 import com.dtstack.taier.scheduler.service.ScheduleJobService;
+import com.dtstack.taier.scheduler.service.ScheduleTaskShadeService;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -54,6 +63,9 @@ public class JobSubmittedDealer implements Runnable {
 
     @Autowired
     private ScheduleJobService scheduleJobService;
+
+    @Resource
+    private ScheduleTaskShadeService scheduleTaskShadeService;
 
     @Autowired
     private ScheduleJobCacheService scheduleJobCacheService;
@@ -73,6 +85,8 @@ public class JobSubmittedDealer implements Runnable {
     @Autowired
     private ScheduleJobExpandService scheduleJobExpandService;
 
+    @Autowired
+    private AlertClient alertClient;
 
     public JobSubmittedDealer() {
         queue = JobSubmitDealer.getSubmittedQueue();
@@ -134,8 +148,45 @@ public class JobSubmittedDealer implements Runnable {
             scheduleJobService.jobFail(jobId, TaskStatus.FAILED.getStatus(), info);
             LOGGER.info("jobId:{} update job status:{}, job is finished.", jobId, TaskStatus.FAILED.getStatus());
             scheduleJobCacheService.deleteByJobId(jobId);
+            // 发送报警信息
+            sendAlertMsg(jobId);
         } catch (Exception e) {
             LOGGER.error("jobId:{} update job fail {}  error", jobId, info, e);
+        }
+    }
+
+    /**
+     * send job failed alert msg
+     *
+     * @param jobId JobID
+     */
+    private void sendAlertMsg(String jobId) {
+        // TODO: sxs 查询任务是否开启失败报警
+
+        try {
+            ScheduleJob scheduleJob = scheduleJobService.getByJobId(jobId);
+            if (Objects.isNull(scheduleJob)) {
+                LOGGER.warn("No scheduleJob found. jobId: {}", jobId);
+                return;
+            }
+            Long taskId = scheduleJob.getTaskId();
+            if (taskId < 0) {
+                LOGGER.info("Instant query, no need to alarm. jobId: {}", jobId);
+                return;
+            }
+            List<ScheduleTaskShade> scheduleTaskShades = scheduleTaskShadeService.listByTaskId(taskId);
+            if (CollectionUtils.isEmpty(scheduleTaskShades)) {
+                LOGGER.info("No scheduleTaskShades found. taskId: {}", taskId);
+                return;
+            }
+            SendAlertEntity sendAlertEntity = new SendAlertEntity();
+            sendAlertEntity.setTaskId(taskId);
+            sendAlertEntity.setTaskName(scheduleTaskShades.get(0).getName());
+            sendAlertEntity.setScheduleJobKey(scheduleJob.getJobKey());
+            sendAlertEntity.setScheduleJobName(scheduleJob.getJobName());
+            alertClient.sendJobFailed(sendAlertEntity);
+        } catch (Exception e) {
+            LOGGER.error("sendAlertMsg error. jobId: {}", jobId, e);
         }
     }
 

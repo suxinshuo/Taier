@@ -20,8 +20,9 @@ package com.dtstack.taier.common.util;
 
 import com.dtstack.taier.common.annotation.VarName;
 import com.google.common.collect.Maps;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Field;
@@ -34,8 +35,9 @@ import java.util.Objects;
  * @author suxinshuo
  * @date 2025/7/16 17:57
  */
-@Slf4j
 public class TemplateVarUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(TemplateVarUtils.class);
 
     /**
      * 匹配并替换变量
@@ -58,7 +60,7 @@ public class TemplateVarUtils {
      */
     public static String matchTemplateVar(String content, Map<String, String> varMap) {
         if (StringUtils.isEmpty(content) || CollectionUtils.isEmpty(varMap)) {
-            log.warn("matchTemplateVar 参数为空, content: {}, varMap: {}", content, varMap);
+            logger.warn("matchTemplateVar 参数为空, content: {}, varMap: {}", content, varMap);
             return content;
         }
         String result = content;
@@ -94,7 +96,7 @@ public class TemplateVarUtils {
                 varMap.put(varName.value(), value.toString());
             }
         } catch (Exception e) {
-            log.error("转化变量失败", e);
+            logger.error("转化变量失败", e);
         }
         return varMap;
     }

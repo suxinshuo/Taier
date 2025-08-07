@@ -53,6 +53,7 @@ public class ShardCache implements ApplicationContextAware {
         if (engineJobCache == null) {
             return null;
         }
+        // 每种计算类型启动一个 JobStatus 去获取更新状态
         return jobResourceShardManager.computeIfAbsent(engineJobCache.getJobResource(), jr -> {
             ShardManager shardManager = new ShardManager(engineJobCache.getJobResource());
             JobStatusDealer jobStatusDealer = new JobStatusDealer();

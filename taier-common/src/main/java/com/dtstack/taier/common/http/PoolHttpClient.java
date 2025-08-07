@@ -44,9 +44,11 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -93,19 +95,38 @@ public class PoolHttpClient {
     }
 
     private static CloseableHttpClient getHttpClient() throws Exception {
-        ConnectionSocketFactory plainsf = PlainConnectionSocketFactory
-                .getSocketFactory();
-//		LayeredConnectionSocketFactory sslsf = SSLConnectionSocketFactory
-//				.getSocketFactory();
+        ConnectionSocketFactory plainsf = PlainConnectionSocketFactory.getSocketFactory();
+
+        SSLContext sslContext = VerifySSLContext.createIgnoreVerifySSL();
+        // 用带协议参数的构造器, 显式打开你要支持的协议
+        // supportedCipherSuites = null 表示套件用默认
+        SSLConnectionSocketFactory sslsf = getSslConnectionSocketFactory(sslContext);
         Registry<ConnectionSocketFactory> registry = RegistryBuilder
                 .<ConnectionSocketFactory> create().register("http", plainsf)
-                .register("https", new SSLConnectionSocketFactory(VerifySSLContext.createIgnoreVerifySSL())).build();
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(
-                registry);
+                .register("https", sslsf).build();
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(registry);
         cm.setMaxTotal(maxTotal);
         cm.setDefaultMaxPerRoute(maxPerRoute);
         return HttpClients.custom()
                 .setConnectionManager(cm).setRetryHandler(new RdosHttpRequestRetryHandler()).build();
+    }
+
+    private static @NotNull SSLConnectionSocketFactory getSslConnectionSocketFactory(SSLContext sslContext) {
+        String[] supportedProtocols = new String[] {
+                "TLSv1", "TLSv1.1", "TLSv1.2"
+        };
+        String[] supportedCipherSuites = new String[]{
+                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+        };
+        return new SSLConnectionSocketFactory(
+                sslContext,
+                supportedProtocols,
+                supportedCipherSuites,
+                SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+        );
     }
 
     public static String post(String url, String bodyData, Map<String,Object> cookies) {
@@ -313,4 +334,5 @@ public class PoolHttpClient {
         }
         return sb.toString();
     }
+
 }
