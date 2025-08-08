@@ -40,6 +40,9 @@ public class SendAlertEntity {
     @VarName("{{JOB_NAME}}")
     private String scheduleJobName;
 
+    @VarName("{{NOW_TIME}}")
+    private String nowTime;
+
     public Long getTaskId() {
         return taskId;
     }
@@ -72,6 +75,14 @@ public class SendAlertEntity {
         this.scheduleJobName = scheduleJobName;
     }
 
+    public String getNowTime() {
+        return nowTime;
+    }
+
+    public void setNowTime(String nowTime) {
+        this.nowTime = nowTime;
+    }
+
     @Override
     public String toString() {
         return "SendAlertEntity{" +
@@ -79,6 +90,7 @@ public class SendAlertEntity {
                 ", taskName='" + taskName + '\'' +
                 ", scheduleJobKey='" + scheduleJobKey + '\'' +
                 ", scheduleJobName='" + scheduleJobName + '\'' +
+                ", nowTime='" + nowTime + '\'' +
                 '}';
     }
 

@@ -314,6 +314,10 @@ public class DateUtil {
         throw new IllegalArgumentException("Can't convert " + val.getClass().getName() + " to Date");
     }
 
+    public static String getNowTime() {
+        return datetimeFormatter.format(new Date());
+    }
+
     public static Date stringToDate(String strDate) {
         assert strDate == null || strDate.trim().length() == 0;
 

@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.dtstack.taier.common.alert.AlertClient;
 import com.dtstack.taier.common.alert.entity.SendAlertEntity;
 import com.dtstack.taier.common.enums.EJobCacheStage;
+import com.dtstack.taier.common.util.DateUtil;
 import com.dtstack.taier.common.util.JobGraphUtil;
 import com.dtstack.taier.dao.domain.ScheduleJob;
 import com.dtstack.taier.dao.domain.ScheduleJobHistory;
@@ -184,6 +185,7 @@ public class JobSubmittedDealer implements Runnable {
             sendAlertEntity.setTaskName(scheduleTaskShades.get(0).getName());
             sendAlertEntity.setScheduleJobKey(scheduleJob.getJobKey());
             sendAlertEntity.setScheduleJobName(scheduleJob.getJobName());
+            sendAlertEntity.setNowTime(DateUtil.getNowTime());
             alertClient.sendJobFailed(sendAlertEntity);
         } catch (Exception e) {
             LOGGER.error("sendAlertMsg error. jobId: {}", jobId, e);
